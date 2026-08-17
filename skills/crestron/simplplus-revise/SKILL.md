@@ -11,7 +11,7 @@ argument-hint: module file or directory path
 ## Before revising
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` and
   `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
-- For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/`.
+- For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`.
 
 ## To implement
 - [ ] Audit against SIMPL+ signal/handler conventions and reserved names

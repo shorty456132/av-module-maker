@@ -17,7 +17,7 @@ argument-hint: module description
 ## Before writing code
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md`.
 - Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
-- For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/`
+- For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`
   (delegate to an Explore subagent, per the Q-SYS `create-plugin` convention).
 
 ## To implement
