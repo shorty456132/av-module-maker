@@ -169,7 +169,7 @@ You are responsible for creating and populating **every** `.lua` file listed bel
 
 ## How It Works
 
-`plugin.lua` is the **entry point and orchestrator**. It defines every Q-SYS plugin lifecycle function and delegates each one to a separate `.lua` file using `--[[ #include "filename.lua" ]]`. At compile time, the `compile` skill (`${CLAUDE_PLUGIN_ROOT}/scripts/compile.py`) resolves these include directives and produces a monolithic `.qplug` file that Q-SYS Designer can load.
+`plugin.lua` is the **entry point and orchestrator**. It defines every Q-SYS plugin lifecycle function and delegates each one to a separate `.lua` file using `--[[ #include "filename.lua" ]]`. At compile time, the `compile` skill (`${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py`) resolves these include directives and produces a monolithic `.qplug` file that Q-SYS Designer can load.
 
 ### Two Execution Phases
 
@@ -603,7 +603,7 @@ Before finishing, verify:
 After all files are created, compile the plugin into a single `.qplug` file:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/compile.py" <plugin-directory>
+python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" <plugin-directory>
 ```
 
 This resolves all `--[[ #include ]]` directives and outputs a `.qplug` file in the plugin directory. Offer to run this for the user after creating all files.

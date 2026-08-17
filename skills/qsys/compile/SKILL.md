@@ -26,13 +26,13 @@ Display the current version to the user and ask which component to bump using As
 Then run the compile command with the appropriate `--bump` flag:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/compile.py" $ARGUMENTS --bump=<choice>
+python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" $ARGUMENTS --bump=<choice>
 ```
 
 If the user chooses Skip, run without the `--bump` flag:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/compile.py" $ARGUMENTS
+python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" $ARGUMENTS
 ```
 
 If the compile succeeds, tell the user the new version and where the `.qplug` file was created.

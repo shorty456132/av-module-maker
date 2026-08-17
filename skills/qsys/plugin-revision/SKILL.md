@@ -115,13 +115,13 @@ After all changes are made, read the current version from `info.lua` and ask the
 Then compile with the appropriate flag:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/compile.py" $ARGUMENTS --bump=<choice>
+python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" $ARGUMENTS --bump=<choice>
 ```
 
 If the user chooses Skip:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/compile.py" $ARGUMENTS
+python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" $ARGUMENTS
 ```
 
 Tell the user the new version and where the `.qplug` file was created.
