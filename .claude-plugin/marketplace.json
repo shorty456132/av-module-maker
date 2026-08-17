@@ -1,0 +1,13 @@
+{
+  "name": "module-maker",
+  "owner": {
+    "name": "Andrew Laiacano"
+  },
+  "plugins": [
+    {
+      "name": "module-maker",
+      "source": "./",
+      "description": "Scaffold, compile, and revise Q-SYS plugins (with Crestron and Extron module support planned) from a Claude Code session in any project."
+    }
+  ]
+}
