@@ -1,1 +1,10 @@
 .claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Crestron SIMPL+ compiler outputs
+SPlsWork/
+*.ush

@@ -6,14 +6,35 @@ argument-hint: module file or directory path
 
 # Revise Crestron SIMPL+ Module (WIP)
 
-> **Status: stub.** Structure and contract only — implementation to follow.
+> **Status: WIP.** Compile verification is wired (see **Compile & verify**); the
+> full revision workflow is still being built out.
 
 ## Before revising
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` and
   `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
 - For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`.
+- Establish a baseline: compile the module **before** changing it (see below) so
+  you know whether it started clean and don't blame a pre-existing error on your edit.
 
 ## To implement
 - [ ] Audit against SIMPL+ signal/handler conventions and reserved names
 - [ ] Fix bugs; preserve the module's INPUT/OUTPUT contract unless asked otherwise
+- [ ] Re-compile clean (0 errors) via **Compile & verify** before finishing
 - [ ] Summarize every change made
+
+## Compile & verify
+Compile the revised `.usp` to confirm it still builds — a revision isn't done
+until it compiles with 0 errors:
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/compile.py" <path/to/module.usp> --target=series3
+```
+
+- Match `--target` to the project's processor(s): `series2`, `series3`, `series4`.
+- **On `[FAILED]`:** read each `file: ERROR <code> (Line <n>) - <message>`, fix,
+  and recompile until clean. Compare against the pre-edit baseline so you know
+  which errors your change introduced versus which were already present.
+- **If the script prints `SIMPL+ compiler not found`:** the Crestron toolchain
+  isn't installed here — tell the user to install it (Crestron Master Installer)
+  or point `--compiler=<path>` / the `SPLUSCC` env var at `SPlusCC.exe`, and give
+  them the compile command to run themselves. Don't report the module as broken.
