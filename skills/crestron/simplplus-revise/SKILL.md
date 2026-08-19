@@ -11,7 +11,10 @@ argument-hint: module file or directory path
 
 ## Before revising
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` and
-  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
+  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`. The
+  **SIMPL+ Gotchas** section lists hard compile-error rules (scalars before
+  arrays, required top-of-module directives, `propBounds` before
+  `propDefaultValue`) — verify the module against every one of them.
 - For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`.
 - Establish a baseline: compile the module **before** changing it (see below) so
   you know whether it started clean and don't blame a pre-existing error on your edit.

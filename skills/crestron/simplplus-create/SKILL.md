@@ -17,7 +17,10 @@ argument-hint: module description
   with the Crestron SIMPL+ toolchain installed — see **Compile & verify** below.
 
 ## Before writing code
-- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md`.
+- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` — the
+  **SIMPL+ Gotchas** section lists hard compile-error rules (scalars before
+  arrays, required top-of-module directives, `propBounds` before
+  `propDefaultValue`). Apply every one of them.
 - Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
 - For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`
   (delegate to an Explore subagent, per the Q-SYS `create-plugin` convention).
