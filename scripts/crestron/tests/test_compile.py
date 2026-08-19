@@ -113,6 +113,37 @@ def test_build_command_global_flags_after_targets():
     assert args[target_idx + 1] == "series3"
 
 
+# --- parse_cli (default targets) -----------------------------------------
+
+def test_parse_cli_defaults_to_series3_and_series4():
+    # With no --target flag, a module builds for BOTH current generations
+    # (3-Series and 4-Series), not just one.
+    opts = c.parse_cli(["mod.usp"])
+    assert opts.targets == ["series3", "series4"]
+
+
+def test_parse_cli_explicit_target_overrides_default():
+    opts = c.parse_cli(["mod.usp", "--target=series4"])
+    assert opts.targets == ["series4"]
+
+
+def test_parse_cli_explicit_multiple_targets():
+    opts = c.parse_cli(["mod.usp", "--target=series2,series3"])
+    assert opts.targets == ["series2", "series3"]
+
+
+def test_parse_cli_collects_inputs_and_flags():
+    opts = c.parse_cli(["a.usp", "b.usp", "--build", "--silent"])
+    assert opts.inputs == ["a.usp", "b.usp"]
+    assert opts.rebuild is False
+    assert opts.silent is True
+
+
+def test_parse_cli_rejects_unknown_option():
+    with pytest.raises(ValueError):
+        c.parse_cli(["mod.usp", "--nope"])
+
+
 # --- parse_output ---------------------------------------------------------
 
 def test_parse_success():

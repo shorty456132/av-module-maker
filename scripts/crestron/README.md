@@ -28,7 +28,7 @@ one compiler invocation) and reports the generated artifacts per module.
 
 | Option | Description |
 |---|---|
-| `--target=LIST` | Comma-separated targets: `series2`, `series3`, `series4` (default `series3`) |
+| `--target=LIST` | Comma-separated targets: `series2`, `series3`, `series4` (default `series3,series4` — both current generations) |
 | `--build` | Compile only if changed (`\build`) instead of forcing a rebuild (`\rebuild`, default) |
 | `--compiler=PATH` | Path to `SPlusCC.exe` |
 | `--out=PATH` | Also write all compiler output to a log file (`\out`) |

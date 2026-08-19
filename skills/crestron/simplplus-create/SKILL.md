@@ -34,11 +34,13 @@ After writing the `.usp`, compile it to confirm it builds — do not consider th
 module done until it compiles with 0 errors:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/compile.py" <path/to/module.usp> --target=series3
+python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/compile.py" <path/to/module.usp>
 ```
 
-- Pick `--target` for the project's processor(s): `series2`, `series3`, `series4`
-  (comma-separated for multiple, e.g. `--target=series3,series4`). Default `series4`.
+- With no `--target`, the module builds for **both current generations**
+  (`series3,series4`) — this is the default. Narrow it with `--target` only when
+  the project targets a specific processor: `series2`, `series3`, `series4`
+  (comma-separated for multiple, e.g. `--target=series4`).
 - **On `[OK]` (exit 0):** report the generated `.ush` header and `SPlsWork/`
   artifacts (listed by the script) to the user.
 - **On `[FAILED]` (non-zero exit):** read each diagnostic line

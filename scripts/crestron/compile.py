@@ -21,7 +21,7 @@ A directory argument compiles every .usp it contains (non-recursive).
 
 Options:
   --target=LIST     Comma-separated targets: series2, series3, series4
-                    (default: series3)
+                    (default: series3,series4 -- both current generations)
   --build           Compile only if changed (\\build) instead of forcing a
                     full rebuild (\\rebuild, the default)
   --compiler=PATH   Path to SPlusCC.exe (default: SPLUSCC env var, else the
@@ -49,6 +49,10 @@ WORK_ARTIFACT_EXTS = (".dll", ".cs", ".inf")
 
 DEFAULT_COMPILER = r"C:\Program Files (x86)\Crestron\Simpl\SPlusCC.exe"
 VALID_TARGETS = ("series2", "series3", "series4")
+
+# Processors targeted when --target is omitted. Build for both current
+# generations so a module runs on either a 3-Series or a 4-Series controller.
+DEFAULT_TARGETS = ["series3", "series4"]
 
 # e.g. [C:\work\broken.usp] Error 1002 (Line 1) - Missing ';'
 DIAGNOSTIC_PATTERN = re.compile(
@@ -214,9 +218,14 @@ def find_artifacts(usp_path):
     return artifacts
 
 
-def compile_usp(usp_files, targets=("series3",), rebuild=True, silent=False,
+def compile_usp(usp_files, targets=None, rebuild=True, silent=False,
                 out_file=None, errorcodes=False, compiler=None):
-    """Compile one or more .usp files. Returns (CompileResult, returncode)."""
+    """Compile one or more .usp files. Returns (CompileResult, returncode).
+
+    `targets` defaults to DEFAULT_TARGETS (series3 + series4) when omitted.
+    """
+    if targets is None:
+        targets = DEFAULT_TARGETS
     compiler_path = find_compiler(compiler)
     resolved = [os.path.abspath(f) for f in usp_files]
     for path in resolved:
@@ -250,47 +259,68 @@ def _print_report(result, returncode, usp_files=None):
                     print(f"    {path}")
 
 
+@dataclass
+class CliOptions:
+    """Parsed command-line options for a compile run."""
+
+    inputs: list = field(default_factory=list)
+    targets: list = field(default_factory=lambda: list(DEFAULT_TARGETS))
+    rebuild: bool = True
+    silent: bool = False
+    errorcodes: bool = False
+    out_file: str | None = None
+    compiler: str | None = None
+
+
+def parse_cli(argv):
+    """Parse argv (excluding the program name) into CliOptions.
+
+    `--target` is optional; when omitted the run defaults to DEFAULT_TARGETS
+    (series3 + series4). Raises ValueError on an unknown --option.
+    """
+    opts = CliOptions()
+    for arg in argv:
+        if arg.startswith("--target="):
+            opts.targets = [
+                t.strip() for t in arg.split("=", 1)[1].split(",") if t.strip()
+            ]
+        elif arg.startswith("--compiler="):
+            opts.compiler = arg.split("=", 1)[1]
+        elif arg.startswith("--out="):
+            opts.out_file = arg.split("=", 1)[1]
+        elif arg == "--build":
+            opts.rebuild = False
+        elif arg == "--silent":
+            opts.silent = True
+        elif arg == "--errorcodes":
+            opts.errorcodes = True
+        elif arg.startswith("--"):
+            raise ValueError(f"unknown option '{arg}'")
+        else:
+            opts.inputs.append(arg)
+    return opts
+
+
 def main():
     argv = sys.argv[1:]
     if not argv or "--help" in argv or "-h" in argv:
         print(__doc__.strip())
         sys.exit(0 if argv else 1)
 
-    targets = ["series3"]
-    rebuild = True
-    silent = False
-    errorcodes = False
-    out_file = None
-    compiler = None
-    inputs = []
+    try:
+        opts = parse_cli(argv)
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
 
-    for arg in argv:
-        if arg.startswith("--target="):
-            targets = [t.strip() for t in arg.split("=", 1)[1].split(",") if t.strip()]
-        elif arg.startswith("--compiler="):
-            compiler = arg.split("=", 1)[1]
-        elif arg.startswith("--out="):
-            out_file = arg.split("=", 1)[1]
-        elif arg == "--build":
-            rebuild = False
-        elif arg == "--silent":
-            silent = True
-        elif arg == "--errorcodes":
-            errorcodes = True
-        elif arg.startswith("--"):
-            print(f"Error: unknown option '{arg}'")
-            sys.exit(1)
-        else:
-            inputs.append(arg)
-
-    if not inputs:
+    if not opts.inputs:
         print("Error: no .usp file or directory specified")
         sys.exit(1)
 
     # Expand any directory arguments into their .usp files.
     usp_files = []
     try:
-        for item in inputs:
+        for item in opts.inputs:
             for usp in discover_usp_files(item):
                 if usp not in usp_files:
                     usp_files.append(usp)
@@ -298,16 +328,16 @@ def main():
         print(f"Error: {exc}")
         sys.exit(1)
 
-    invalid = [t for t in targets if t not in VALID_TARGETS]
+    invalid = [t for t in opts.targets if t not in VALID_TARGETS]
     if invalid:
         print(f"Error: invalid target(s) {invalid}. Valid: {', '.join(VALID_TARGETS)}")
         sys.exit(1)
 
     try:
         result, returncode = compile_usp(
-            usp_files, targets=targets, rebuild=rebuild,
-            silent=silent, out_file=out_file, errorcodes=errorcodes,
-            compiler=compiler
+            usp_files, targets=opts.targets, rebuild=opts.rebuild,
+            silent=opts.silent, out_file=opts.out_file, errorcodes=opts.errorcodes,
+            compiler=opts.compiler
         )
     except FileNotFoundError as exc:
         print(f"Error: {exc}")

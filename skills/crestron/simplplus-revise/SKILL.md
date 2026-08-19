@@ -27,10 +27,12 @@ Compile the revised `.usp` to confirm it still builds — a revision isn't done
 until it compiles with 0 errors:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/compile.py" <path/to/module.usp> --target=series3
+python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/compile.py" <path/to/module.usp>
 ```
 
-- Match `--target` to the project's processor(s): `series2`, `series3`, `series4`.
+- With no `--target`, the module builds for **both current generations**
+  (`series3,series4`) — the default. Match `--target` to a specific processor
+  (`series2`, `series3`, `series4`) only when the project requires it.
 - **On `[FAILED]`:** read each `file: ERROR <code> (Line <n>) - <message>`, fix,
   and recompile until clean. Compare against the pre-edit baseline so you know
   which errors your change introduced versus which were already present.
