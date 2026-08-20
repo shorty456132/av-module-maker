@@ -1,13 +1,10 @@
 ---
 name: simplplus-create
-description: (WIP) Scaffold a Crestron SIMPL+ module (.usp) from a device description, with correct INPUT/OUTPUT signal structure and event handlers
+description: Scaffold a Crestron SIMPL+ module (.usp) from a device description, with correct INPUT/OUTPUT signal structure and event handlers
 argument-hint: module description
 ---
 
-# Create Crestron SIMPL+ Module (WIP)
-
-> **Status: WIP.** Compilation is wired (see **Compile & verify**); the scaffold
-> logic is still being built out.
+# Create Crestron SIMPL+ Module
 
 ## Target
 - **Language:** SIMPL+ (C-like)
@@ -28,7 +25,7 @@ argument-hint: module description
 - For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`
   (delegate to an Explore subagent, per the Q-SYS `create-plugin` convention).
 
-## To implement
+## Each module must include
 - [ ] Module skeleton: I/O in strict type order — all inputs
       (`DIGITAL_INPUT` → `ANALOG_INPUT` → `STRING_INPUT`), then all outputs
       (`DIGITAL_OUTPUT` → `ANALOG_OUTPUT` → `STRING_OUTPUT`), then `*_PARAMETER`s

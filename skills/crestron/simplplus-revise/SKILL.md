@@ -1,13 +1,10 @@
 ---
 name: simplplus-revise
-description: (WIP) Review and revise an existing Crestron SIMPL+ module (.usp) — fix bugs, improve logic, and verify against SIMPL+ constraints
+description: Review and revise an existing Crestron SIMPL+ module (.usp) — fix bugs, improve logic, and verify against SIMPL+ constraints
 argument-hint: module file or directory path
 ---
 
-# Revise Crestron SIMPL+ Module (WIP)
-
-> **Status: WIP.** Compile verification is wired (see **Compile & verify**); the
-> full revision workflow is still being built out.
+# Revise Crestron SIMPL+ Module
 
 ## Before revising
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` and
@@ -22,7 +19,7 @@ argument-hint: module file or directory path
 - Establish a baseline: compile the module **before** changing it (see below) so
   you know whether it started clean and don't blame a pre-existing error on your edit.
 
-## To implement
+## Revision checklist
 - [ ] Audit against SIMPL+ signal/handler conventions and reserved names
 - [ ] Verify I/O declaration order: all inputs (digital → analog → serial), then
       all outputs (same type order), then parameters — reorder if violated

@@ -1,17 +1,24 @@
 # Module Maker
 
 A Claude Code plugin for scaffolding, compiling, and revising control-system modules —
-starting with Q-SYS plugins, with Crestron (SIMPL+/SIMPL#) and Extron Global Scripter
-support planned.
+Q-SYS plugins and Crestron SIMPL+ modules today, with Crestron SIMPL#/SIMPL# Pro and
+Extron Global Scripter support planned.
 
 Works from any Claude Code session in any project — no need to `cd` into this repo.
 
 ## Install
 
+From any Claude Code terminal session:
+
 ```
-/plugin marketplace add <path-or-org/repo-to-this-folder>
+/plugin marketplace add shorty456132/av-module-maker
 /plugin install module-maker@module-maker
 ```
+
+The first command registers this repo as a plugin marketplace (Claude Code reads
+`.claude-plugin/marketplace.json` from the repo root); the second installs the plugin.
+You can also run `/plugin` with no arguments to add the marketplace and install from the
+interactive menu. The `/module-maker:*` skill commands run in the terminal CLI.
 
 ## Layout
 
@@ -36,14 +43,22 @@ is not recursive.
 - `/module-maker:plugin-revision <plugin-directory>` — review and revise an existing Q-SYS
   plugin's Lua, then recompile.
 
-**Crestron** (WIP — stubs scaffolded): `simplplus-create` / `simplplus-revise`,
-`simplsharp-create` / `simplsharp-revise`, `simplsharp-pro-create` / `simplsharp-pro-revise`.
+**Crestron SIMPL+** (ready):
+- `/module-maker:simplplus-create <description>` — scaffold a Crestron SIMPL+ module
+  (`.usp`) from a device description, with correct INPUT/OUTPUT signal structure, event
+  handlers, and automatic compile verification via the SIMPL+ Cross Compiler.
+- `/module-maker:simplplus-revise <module-path>` — review and revise an existing SIMPL+
+  module against the SIMPL+ constraints, then recompile clean.
+
+**Crestron SIMPL# / SIMPL# Pro** (WIP — stubs scaffolded): `simplsharp-create` /
+`simplsharp-revise`, `simplsharp-pro-create` / `simplsharp-pro-revise`.
 
 ## Roadmap
 
-- **Now**: Q-SYS plugin creation, compilation, and revision.
-- **In progress**: Crestron SIMPL+, SIMPL#, and SIMPL# Pro module creation — folder
-  structure and skill stubs are in place; reference docs and implementation to follow.
+- **Now**: Q-SYS plugin creation, compilation, and revision; Crestron SIMPL+ module
+  creation and revision with compile verification.
+- **In progress**: Crestron SIMPL# and SIMPL# Pro module creation — folder structure
+  and skill stubs are in place; reference docs and implementation to follow.
 - **Planned**: Extron Global Scripter module creation, following the same
   `skills/<platform>/` + `reference/<platform>/` convention.
 
