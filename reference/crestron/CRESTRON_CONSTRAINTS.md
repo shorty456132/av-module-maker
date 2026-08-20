@@ -67,6 +67,39 @@ propDefaultValue = 26s;        // then default
 #END_PARAMETER_PROPERTIES
 ```
 
+### 4. Declare I/O signals in type order: digital → analog → serial
+
+Top-level signal declarations **must** be grouped by direction and, within each
+direction, follow a fixed type order: **digital, then analog, then serial.**
+Declare **all inputs first** (in that type order), then **all outputs** (in that
+same type order), and finally the **parameters**.
+
+This order is strict and mechanically significant: the compiler relies on it to
+actually build the I/O so the signals show up correctly on the symbol in SIMPL
+Windows. Interleaving types — e.g. an analog input before a digital input —
+causes the I/O to build wrong (or not appear as expected), not just a cosmetic
+lint issue.
+
+```simplplus
+// INPUTS — digital, then analog, then serial
+DIGITAL_INPUT   Enable, Reset;
+ANALOG_INPUT    Level;
+STRING_INPUT    Command[255];
+
+// OUTPUTS — same type order: digital, then analog, then serial
+DIGITAL_OUTPUT  Is_Online, Error_Fb;
+ANALOG_OUTPUT   Level_Fb;
+STRING_OUTPUT   Response;
+
+// PARAMETERS — last
+INTEGER_PARAMETER   RetryCount;
+STRING_PARAMETER    DeviceName[64];
+```
+
+Overall order: **all inputs (digital → analog → serial) → all outputs (digital →
+analog → serial) → parameters.** Serial inputs/outputs use `STRING_INPUT` /
+`STRING_OUTPUT` (or `BUFFER_INPUT` for serial buffers).
+
 ## Still to document per target
 - Toolchain / SDK versions and how compilation is invoked (much of it is
   proprietary IDE tooling, unlike the open Q-SYS `compile.py`).

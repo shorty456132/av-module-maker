@@ -19,14 +19,17 @@ argument-hint: module description
 ## Before writing code
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` — the
   **SIMPL+ Gotchas** section lists hard compile-error rules (scalars before
-  arrays, required top-of-module directives, `propBounds` before
-  `propDefaultValue`). Apply every one of them.
+  arrays, required top-of-module directives, I/O declared in strict type order
+  **digital → analog → serial** — all inputs, then all outputs, then parameters,
+  `propBounds` before `propDefaultValue`). Apply every one of them.
 - Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
 - For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`
   (delegate to an Explore subagent, per the Q-SYS `create-plugin` convention).
 
 ## To implement
-- [ ] Module skeleton: `DIGITAL_INPUT`/`ANALOG_INPUT`/`STRING_INPUT` + matching outputs
+- [ ] Module skeleton: I/O in strict type order — all inputs
+      (`DIGITAL_INPUT` → `ANALOG_INPUT` → `STRING_INPUT`), then all outputs
+      (`DIGITAL_OUTPUT` → `ANALOG_OUTPUT` → `STRING_OUTPUT`), then `*_PARAMETER`s
 - [ ] Event handlers: `CHANGE`, `PUSH`, `RELEASE`, `EVENT`
 - [ ] Comms (serial/TCP) via `SOCKET` + buffer parsing where applicable
 - [ ] Connection details (IP/port/credentials) as parameters, not hard-coded
