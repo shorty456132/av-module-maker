@@ -100,6 +100,11 @@ Overall order: **all inputs (digital → analog → serial) → all outputs (dig
 analog → serial) → parameters.** Serial inputs/outputs use `STRING_INPUT` /
 `STRING_OUTPUT` (or `BUFFER_INPUT` for serial buffers).
 
+### 5. Don't add `#SYMBOL_NAME`
+
+`#SYMBOL_NAME` is **not** required and should be omitted. It doesn't affect the
+compiled output and only causes confusion — leave it out entirely.
+
 ## Still to document per target
 - Toolchain / SDK versions and how compilation is invoked (much of it is
   proprietary IDE tooling, unlike the open Q-SYS `compile.py`).
