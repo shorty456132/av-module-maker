@@ -105,6 +105,50 @@ analog → serial) → parameters.** Serial inputs/outputs use `STRING_INPUT` /
 `#SYMBOL_NAME` is **not** required and should be omitted. It doesn't affect the
 compiled output and only causes confusion — leave it out entirely.
 
+### 6. Pad I/O with `_SKIP_` so parameters don't cover signal names
+
+On the SIMPL Windows symbol, parameters render across the **top** of the block —
+directly over the first input rows (left) and first output rows (right). When a
+module has both parameters and I/O, the parameter labels visually cover the
+names of the topmost signals.
+
+Fix it with the `_SKIP_` keyword, which inserts a blank gap row. `_SKIP_` is a
+**graphic-only** consideration — it has no effect on the input/output
+relationships of the symbol, so it never changes behavior or breaks the strict
+type order in gotcha #4.
+
+Rule: if the module has **N** parameters, prepend **N** `_SKIP_` entries to the
+**first input declaration** and the **first output declaration** (i.e. the
+topmost signal in each column). This drops every real signal below the parameter
+block so nothing is covered. Apply it only at the top of each column — not once
+per type, and not on the parameter declarations themselves.
+
+```simplplus
+// 3 parameters → 3 leading _SKIP_ on the first input and first output decl.
+
+// INPUTS — the first (topmost) input declaration gets the padding
+DIGITAL_INPUT   _SKIP_, _SKIP_, _SKIP_, Enable, Reset;
+ANALOG_INPUT    Level;            // later types: no extra padding
+STRING_INPUT    Command[255];
+
+// OUTPUTS — the first (topmost) output declaration gets the padding
+DIGITAL_OUTPUT  _SKIP_, _SKIP_, _SKIP_, Is_Online, Error_Fb;
+ANALOG_OUTPUT   Level_Fb;
+STRING_OUTPUT   Response;
+
+// PARAMETERS — last, as always (unchanged)
+INTEGER_PARAMETER   RetryCount;
+STRING_PARAMETER    DeviceName[64];
+STRING_PARAMETER    DeviceIp[64];
+```
+
+Notes:
+- The padding goes on whichever type is **first present** in each column. If a
+  module has no digital inputs, the `_SKIP_` entries lead the first analog (or
+  serial) input declaration instead.
+- If the module has only inputs or only outputs, pad whichever column exists.
+- No parameters → no `_SKIP_` padding.
+
 ## Still to document per target
 - Toolchain / SDK versions and how compilation is invoked (much of it is
   proprietary IDE tooling, unlike the open Q-SYS `compile.py`).

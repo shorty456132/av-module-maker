@@ -1,13 +1,10 @@
 ---
 name: simplplus-create
-description: (WIP) Scaffold a Crestron SIMPL+ module (.usp) from a device description, with correct INPUT/OUTPUT signal structure and event handlers
+description: Scaffold a Crestron SIMPL+ module (.usp) from a device description, with correct INPUT/OUTPUT signal structure and event handlers
 argument-hint: module description
 ---
 
-# Create Crestron SIMPL+ Module (WIP)
-
-> **Status: WIP.** Compilation is wired (see **Compile & verify**); the scaffold
-> logic is still being built out.
+# Create Crestron SIMPL+ Module
 
 ## Target
 - **Language:** SIMPL+ (C-like)
@@ -21,15 +18,20 @@ argument-hint: module description
   **SIMPL+ Gotchas** section lists hard compile-error rules (scalars before
   arrays, required top-of-module directives, I/O declared in strict type order
   **digital → analog → serial** — all inputs, then all outputs, then parameters,
-  `propBounds` before `propDefaultValue`). Apply every one of them.
+  `propBounds` before `propDefaultValue`) plus the `_SKIP_` padding rule that
+  keeps parameters from covering signal names on the symbol. Apply every one of
+  them.
 - Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
 - For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`
   (delegate to an Explore subagent, per the Q-SYS `create-plugin` convention).
 
-## To implement
+## Each module must include
 - [ ] Module skeleton: I/O in strict type order — all inputs
       (`DIGITAL_INPUT` → `ANALOG_INPUT` → `STRING_INPUT`), then all outputs
       (`DIGITAL_OUTPUT` → `ANALOG_OUTPUT` → `STRING_OUTPUT`), then `*_PARAMETER`s
+- [ ] Symbol alignment: if the module has N parameters, prepend N `_SKIP_`
+      entries to the first input declaration and the first output declaration so
+      the parameter labels don't cover the topmost signal names (see gotcha #6)
 - [ ] Event handlers: `CHANGE`, `PUSH`, `RELEASE`, `EVENT`
 - [ ] Comms (serial/TCP) via `SOCKET` + buffer parsing where applicable
 - [ ] Connection details (IP/port/credentials) as parameters, not hard-coded
