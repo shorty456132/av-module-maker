@@ -218,11 +218,35 @@ def find_artifacts(usp_path):
     return artifacts
 
 
+def ensure_crlf(path):
+    """Normalize a .usp file's line endings to CRLF in place.
+
+    SPlusCC.exe silently drops every INPUT/OUTPUT/PARAMETER declaration when
+    the source is LF-only: it still reports 0 errors but writes a degenerate
+    .ush header with zero I/O (no cues, MinVariable*=0), so the module shows no
+    signals or parameters in SIMPL Windows. Crestron sources are always CRLF.
+
+    Any mix of CRLF / lone LF / lone CR collapses to exactly one CRLF per line.
+    The file is rewritten only when it isn't already all-CRLF. Returns True if
+    the file was changed, False if it was left untouched.
+    """
+    with open(path, "rb") as fh:
+        data = fh.read()
+    normalized = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n").replace(b"\n", b"\r\n")
+    if normalized == data:
+        return False
+    with open(path, "wb") as fh:
+        fh.write(normalized)
+    return True
+
+
 def compile_usp(usp_files, targets=None, rebuild=True, silent=False,
                 out_file=None, errorcodes=False, compiler=None):
     """Compile one or more .usp files. Returns (CompileResult, returncode).
 
     `targets` defaults to DEFAULT_TARGETS (series3 + series4) when omitted.
+    Each source is normalized to CRLF (see ensure_crlf) before compiling, so an
+    LF-only .usp can never produce a signal-less .ush.
     """
     if targets is None:
         targets = DEFAULT_TARGETS
@@ -231,6 +255,7 @@ def compile_usp(usp_files, targets=None, rebuild=True, silent=False,
     for path in resolved:
         if not os.path.isfile(path):
             raise FileNotFoundError(f".usp file not found: {path}")
+        ensure_crlf(path)
 
     args = build_command(compiler_path, resolved, list(targets),
                           rebuild=rebuild, silent=silent,
