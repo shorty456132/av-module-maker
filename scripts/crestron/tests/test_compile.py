@@ -185,6 +185,38 @@ def test_parse_warning():
     assert diag.message == "Signal is never used"
 
 
+# --- ensure_crlf ----------------------------------------------------------
+# SPlusCC.exe silently drops every INPUT/OUTPUT/PARAMETER declaration when the
+# .usp source is LF-only: it still compiles with 0 errors but emits a
+# degenerate .ush with zero I/O (no cues, MinVariable*=0). The source MUST use
+# CRLF line endings, so compile.py normalizes each .usp before invoking the
+# compiler.
+
+def test_ensure_crlf_converts_lf_only(tmp_path):
+    f = tmp_path / "mod.usp"
+    f.write_bytes(b"DIGITAL_INPUT a;\nDIGITAL_OUTPUT b;\n")
+    changed = c.ensure_crlf(str(f))
+    assert changed is True
+    assert f.read_bytes() == b"DIGITAL_INPUT a;\r\nDIGITAL_OUTPUT b;\r\n"
+
+
+def test_ensure_crlf_leaves_crlf_untouched(tmp_path):
+    f = tmp_path / "mod.usp"
+    original = b"DIGITAL_INPUT a;\r\nDIGITAL_OUTPUT b;\r\n"
+    f.write_bytes(original)
+    changed = c.ensure_crlf(str(f))
+    assert changed is False
+    assert f.read_bytes() == original
+
+
+def test_ensure_crlf_does_not_double_cr_on_mixed(tmp_path):
+    # Mixed endings must collapse to exactly one CRLF per line, never CRCRLF.
+    f = tmp_path / "mod.usp"
+    f.write_bytes(b"line1\r\nline2\nline3\rline4")
+    c.ensure_crlf(str(f))
+    assert f.read_bytes() == b"line1\r\nline2\r\nline3\r\nline4"
+
+
 # --- find_compiler --------------------------------------------------------
 
 def test_find_compiler_explicit_path(tmp_path):

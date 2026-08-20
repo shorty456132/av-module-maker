@@ -149,6 +149,22 @@ Notes:
 - If the module has only inputs or only outputs, pad whichever column exists.
 - No parameters → no `_SKIP_` padding.
 
+### 7. Save `.usp` with CRLF (`\r\n`) line endings, never LF-only
+
+`SPlusCC.exe` requires DOS/Windows line endings. Given an **LF-only** `.usp`, the
+compiler does **not** error — it reports `Total Error(s): 0`, writes a `.ush`, and
+looks like it succeeded. But that `.ush` is a degenerate stub: it silently drops
+**every** `*_INPUT` / `*_OUTPUT` / `*_PARAMETER` declaration
+(`MinVariableInputs=0`, no `InputCue`/`OutputCue`/`ParamCue`, `SysRev5` pinned to
+an older value). Dropped into SIMPL Windows the module shows **no I/O and no
+parameters** — the classic symptom of this bug.
+
+This bites because agent file-writers (and many editors on non-Windows hosts)
+emit LF-only files. `scripts/crestron/compile.py` guards against it by normalizing
+every `.usp` to CRLF (`ensure_crlf`) before invoking the compiler, so compiling
+through that script is always safe. If you write or hand-edit a `.usp` any other
+way, ensure it is saved CRLF before compiling.
+
 ## Still to document per target
 - Toolchain / SDK versions and how compilation is invoked (much of it is
   proprietary IDE tooling, unlike the open Q-SYS `compile.py`).
