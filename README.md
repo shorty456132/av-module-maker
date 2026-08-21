@@ -33,6 +33,12 @@ Each platform folder is registered as a skill root in `.claude-plugin/plugin.jso
 (`"skills": ["./skills/qsys/", "./skills/crestron/"]`), since plugin skill discovery
 is not recursive.
 
+Q-SYS help content is **not** bundled in this repo. `reference/qsys/` holds the
+hand-authored `QSYS_PATTERNS.md` and `QSYS_CONSTRAINTS.md` plus `QSYS_DOC_INDEX.md`,
+a topic→URL map of QSC's official help pages. The skills look a topic up in that index
+and fetch the live page on demand, so the docs stay current and no third-party
+material is redistributed.
+
 ## Skills
 
 **Q-SYS** (ready):

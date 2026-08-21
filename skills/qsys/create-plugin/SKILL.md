@@ -18,12 +18,13 @@ Before creating any files, ask the user where they want the plugin files placed.
 
 When the plugin interacts with Q-SYS components or features, confirm behaviors, parameter names, and value ranges against the help docs before designing controls, properties, and runtime logic. This prevents creating controls that don't match how Q-SYS actually works.
 
-**Do not Grep or Read `${CLAUDE_PLUGIN_ROOT}/reference/qsys/documents/` in this thread** — the corpus is ~800 files, many 25–65 KB, and reading them inline exhausts the context window. Delegate every Q-SYS API or component question to a read-only subagent instead:
+The full help text is **not** stored in this repo (it is QSC copyrighted material). Instead, `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_DOC_INDEX.md` maps every Q-SYS help topic to its canonical source URL. **Do not read that index or WebFetch help pages in this thread** — fetched pages are large and reading them inline exhausts the context window. Delegate every Q-SYS API or component question to a read-only subagent instead:
 
 Call the **Agent tool with `subagent_type: "Explore"`** and give it:
 
-1. **The search root** — `${CLAUDE_PLUGIN_ROOT}/reference/qsys/documents/`
-2. **The question**, in this shape:
+1. **The index to search** — `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_DOC_INDEX.md`, a `Topic | Title | Source URL` table. Grep the `Topic` column for the subject to find the matching Source URL(s).
+2. **The fetch instruction** — once it has the URL(s), **WebFetch** each one for the current page content (the live docs are always the latest published version).
+3. **The question**, in this shape:
 
    ```
    Query:         [natural-language question]
@@ -31,11 +32,11 @@ Call the **Agent tool with `subagent_type: "Explore"`** and give it:
    Doc area hint: [e.g. Control Scripting, Schematic Library, SDK / Plugin, Code Examples]
    What's needed: [syntax | example | property/method list | gotchas | all]
    ```
-3. **The output contract** — return only the relevant excerpts plus the file paths they came from. No file dumps.
+4. **The output contract** — return only the relevant excerpts plus the **source URL** they came from. No page dumps.
 
-Useful doc-area hints: `Schematic_Library-*` (Q-SYS components), `Control_Scripting-*` (Lua API), `External_Control_APIs-*`, `Hardware-*`, `Networking-*`, `Application_Integration-*`, and in `SDK Help/`: `Getting_Started-*`, `Standards_Definitions-*`, `Code_Examples-*`, `Recommended_Practices-*`, `Development_Tools-*`.
+Useful topic hints (grep these against the `Topic` column): `Schematic_Library-*` (Q-SYS components), `Control_Scripting-*` (Lua API), `External_Control_APIs-*`, `Hardware-*`, `Networking-*`, `Application_Integration-*`, and the SDK topics `Getting_Started-*`, `Standards_Definitions-*`, `Code_Examples-*`, `Recommended_Practices-*`, `Development_Tools-*`.
 
-If the agent reports **Not found**, fall back to a pattern in `QSYS_PATTERNS.md` or ask the user — never invent Q-SYS API behavior from memory.
+If the topic isn't in the index or the page can't be fetched, fall back to a pattern in `QSYS_PATTERNS.md` or ask the user — never invent Q-SYS API behavior from memory.
 
 Also read `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_PATTERNS.md` before writing Lua — most common needs (sockets, timers, JSON, control types, reserved names) are already answered there, no subagent required. And read `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_CONSTRAINTS.md` before writing or revising any Lua — it covers design-time vs runtime rules, control-array conventions, naming/scoping rules, and the platform's most common pitfalls.
 
@@ -448,13 +449,13 @@ end
 
 When a plugin communicates with a device via TCP, UDP, or serial, start from the transport pattern in `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_PATTERNS.md` — it covers socket setup, event handlers, and buffer reading for all three.
 
-If the plugin needs behavior beyond those patterns (TCP server management, UDP broadcast/multicast or network interface binding, non-standard serial framing), dispatch an `Explore` subagent to the matching recommended-practices doc rather than reading it here:
+If the plugin needs behavior beyond those patterns (TCP server management, UDP broadcast/multicast or network interface binding, non-standard serial framing), dispatch an `Explore` subagent to **WebFetch** the matching recommended-practices page rather than reading it here:
 
-- **TCP Client or TCP Server**: `${CLAUDE_PLUGIN_ROOT}/reference/qsys/documents/SDK Help/Recommended_Practices-TCP.md`
-- **UDP (one-way, two-way, server, broadcast, multicast)**: `${CLAUDE_PLUGIN_ROOT}/reference/qsys/documents/SDK Help/Recommended_Practices-UDP.md`
-- **Serial**: `${CLAUDE_PLUGIN_ROOT}/reference/qsys/documents/SDK Help/Recommended_Practices-Serial.md`
+- **TCP Client or TCP Server**: `https://help.qsys.com/DeveloperHelp/Content/Recommended_Practices/TCP.htm`
+- **UDP (one-way, two-way, server, broadcast, multicast)**: `https://help.qsys.com/DeveloperHelp/Content/Recommended_Practices/UDP.htm`
+- **Serial**: `https://help.qsys.com/DeveloperHelp/Content/Recommended_Practices/Serial.htm`
 
-Pass the subagent the absolute file path and ask for the specific excerpt you need.
+Pass the subagent the URL and ask for the specific excerpt you need.
 
 **TCP Timeout rules**: Set `TCP.ReadTimeout = 0` and `TCP.WriteTimeout = 0` (disabled) by default for TCP client connections. Only set non-zero timeout values when the socket is used as a **TCP server** (TcpSocketServer) where idle connection cleanup is desired.
 
