@@ -8,3 +8,5 @@ __pycache__/
 # Crestron SIMPL+ compiler outputs
 SPlsWork/
 *.ush
+
+TASKS.md
