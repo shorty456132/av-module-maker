@@ -9,8 +9,8 @@ argument-hint: project file or directory path
 > **Status: stub.** Structure and contract only — implementation to follow.
 
 ## Before revising
-- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` and
-  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
+- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp/SIMPLSHARP_CONSTRAINTS.md` and
+  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp/SIMPLSHARP_PATTERNS.md`.
 - For API questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp/`.
 
 ## To implement
