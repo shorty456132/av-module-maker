@@ -1,19 +1,15 @@
-# Crestron Constraints (WIP)
+# SIMPL+ Constraints
 
-> Status: **stub** — to be populated as Crestron skills are built.
-> Mirrors the role of `reference/qsys/QSYS_CONSTRAINTS.md`: the hard rules and
-> common pitfalls an author must know *before* writing code for each target.
+> Scope: **SIMPL+ only** (`.usp` → `.ush`, C-like language, INPUT/OUTPUT signal
+> model, compiled by the SIMPL+ Cross Compiler inside SIMPL Windows for 3-Series
+> & 4-Series). Mirrors the role of `reference/qsys/QSYS_CONSTRAINTS.md`: the hard
+> rules and common pitfalls an author must know *before* writing a `.usp`.
+>
+> Sibling targets have their own files: SIMPL# → `../simplsharp/SIMPLSHARP_CONSTRAINTS.md`,
+> SIMPL# Pro → `../simplsharp-pro/SIMPLSHARP_PRO_CONSTRAINTS.md`. They are **not**
+> interchangeable — different languages, toolchains, and output artifacts.
 
-Crestron module development spans three distinct targets. They are **not**
-interchangeable — different languages, toolchains, and output artifacts.
-
-| Target        | Language            | Output  | Compiled in                                  | Runs on |
-|---------------|---------------------|---------|----------------------------------------------|---------|
-| SIMPL+        | SIMPL+ (C-like)     | `.usp` → `.ush` | SIMPL Windows / SIMPL+ Cross Compiler | 3-Series & 4-Series (as part of a SIMPL program) |
-| SIMPL#        | C# (.NET, S#)       | `.clz`  | Visual Studio + Crestron SIMPL# template     | Loaded by SIMPL Windows as a custom module |
-| SIMPL# Pro    | C# (.NET, S# Pro)   | `.cpz`  | Visual Studio + Crestron SDK / MSBuild        | 4-Series appliances, VC-4 |
-
-## SIMPL+ Gotchas (must-fix compile errors)
+## Gotchas (must-fix compile errors)
 
 These are confirmed against the SIMPL+ Cross Compiler. Violating any of them
 produces a compile error that is not always obvious from the message — check
@@ -165,13 +161,14 @@ every `.usp` to CRLF (`ensure_crlf`) before invoking the compiler, so compiling
 through that script is always safe. If you write or hand-edit a `.usp` any other
 way, ensure it is saved CRLF before compiling.
 
-## Still to document per target
-- Toolchain / SDK versions and how compilation is invoked (much of it is
-  proprietary IDE tooling, unlike the open Q-SYS `compile.py`).
-- Threading and event model constraints (esp. SIMPL# `ProgramStatusEventHandler`,
-  no blocking on the main thread).
-- Reserved names, join/parameter conventions, INPUT/OUTPUT signal rules (SIMPL+).
-- Memory/lifetime rules, `Dispose`, and program-stop handling.
-- What must be a runtime parameter vs. compile-time constant.
+## Still to document
+- Reserved names and identifier rules beyond the ordering constraints above.
+- `WAIT` / `PROCESSLOGIC` / event-reentrancy behavior and when `#ENABLE_STACK_CHECKING`
+  actually trips.
+- `NONVOLATILE` vs. `VOLATILE` lifetime rules across program restart.
+- String/buffer sizing limits and `STRING_INPUT`/`BUFFER_INPUT` gotchas.
+- What must be a `*_PARAMETER` (compile-time / symbol-time constant) vs. a signal.
 
-_Add rules here as they are confirmed against Crestron help docs._
+_Add rules here as they are confirmed against SIMPL+ help docs
+(`documents/`). Keep this file SIMPL+-only — SIMPL# and SIMPL# Pro rules belong in
+their own sibling files._

@@ -15,8 +15,8 @@ argument-hint: program description
   is not fully automatable here — document the manual step)
 
 ## Before writing code
-- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md`.
-- Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
+- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/SIMPLSHARP_PRO_CONSTRAINTS.md`.
+- Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/SIMPLSHARP_PRO_PATTERNS.md`.
 - For SDK/API questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/`.
 
 ## To implement

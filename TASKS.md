@@ -59,12 +59,12 @@ searched via the installed `crestron-lookup` sub-agent.
 
 ### Slice 3 — SIMPL# target fully documented  ·  CONSTRAINTS + PATTERNS (SIMPL#)
 *Vertical: one target's hard rules **and** ready-to-adapt code land together.*
-- [ ] `CRESTRON_CONSTRAINTS.md` — replace the SIMPL# stub with a real gotcha section
+- [ ] `simplsharp/SIMPLSHARP_CONSTRAINTS.md` — replace the SIMPL# stub with a real gotcha section
       (mirror the SIMPL+ "Gotchas" depth): constrained BCL / SIMPL# library project;
       `SimplSharpString` across the boundary (not `System.String`); never block the
       SIMPL+ callback thread (`CrestronThread`/`CTimer`); feedback via delegate/callback
       props; `Dispose`/program-stop; `.clz` shows no symbol — the `.usp` wrapper does.
-- [ ] `CRESTRON_PATTERNS.md` — replace the SIMPL# stub with real skeletons: C# class
+- [ ] `simplsharp/SIMPLSHARP_PATTERNS.md` — replace the SIMPL# stub with real skeletons: C# class
       exposing methods + callback props to SIMPL+, **and** the matching `.usp` wrapper.
 - [ ] Every corpus-derived rule/pattern carries a `> Source:` link; signatures verified
       via `crestron-lookup`, never invented.
@@ -72,10 +72,10 @@ searched via the installed `crestron-lookup` sub-agent.
 
 ### Slice 4 — SIMPL# Pro target fully documented  ·  CONSTRAINTS + PATTERNS (Pro)
 *Vertical: the other target's hard rules **and** ready-to-adapt code land together.*
-- [ ] `CRESTRON_CONSTRAINTS.md` — replace the SIMPL# Pro stub: `InitializeSystem()` must
+- [ ] `simplsharp-pro/SIMPLSHARP_PRO_CONSTRAINTS.md` — replace the SIMPL# Pro stub: `InitializeSystem()` must
       not block (offload to a thread); register devices + check success before use;
       `ProgramStatusEventHandler` graceful stop; IPID/eControlMethod registration rules.
-- [ ] `CRESTRON_PATTERNS.md` — replace the SIMPL# Pro stub with real skeletons:
+- [ ] `simplsharp-pro/SIMPLSHARP_PRO_PATTERNS.md` — replace the SIMPL# Pro stub with real skeletons:
       `CrestronControlSystem` subclass + `InitializeSystem`; device registration;
       `ProgramStatusEventHandler` stop; threaded TCP receive.
 - [ ] `> Source:` links; signatures verified via `crestron-lookup`, never invented.

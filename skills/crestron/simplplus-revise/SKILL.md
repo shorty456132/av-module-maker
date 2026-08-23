@@ -7,8 +7,8 @@ argument-hint: module file or directory path
 # Revise Crestron SIMPL+ Module
 
 ## Before revising
-- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` and
-  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`. The
+- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/SIMPLPLUS_CONSTRAINTS.md` and
+  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/SIMPLPLUS_PATTERNS.md`. The
   **SIMPL+ Gotchas** section lists hard compile-error rules (scalars before
   arrays, required top-of-module directives, I/O declared in strict type order
   **digital → analog → serial** — all inputs, then all outputs, then parameters,

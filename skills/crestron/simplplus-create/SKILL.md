@@ -14,14 +14,14 @@ argument-hint: module description
   with the Crestron SIMPL+ toolchain installed — see **Compile & verify** below.
 
 ## Before writing code
-- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_CONSTRAINTS.md` — the
+- Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/SIMPLPLUS_CONSTRAINTS.md` — the
   **SIMPL+ Gotchas** section lists hard compile-error rules (scalars before
   arrays, required top-of-module directives, I/O declared in strict type order
   **digital → analog → serial** — all inputs, then all outputs, then parameters,
   `propBounds` before `propDefaultValue`) plus the `_SKIP_` padding rule that
   keeps parameters from covering signal names on the symbol. Apply every one of
   them.
-- Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/CRESTRON_PATTERNS.md`.
+- Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/SIMPLPLUS_PATTERNS.md`.
 - For API/behavior questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/documents/`
   (delegate to an Explore subagent, per the Q-SYS `create-plugin` convention).
 
