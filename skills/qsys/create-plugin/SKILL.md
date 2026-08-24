@@ -487,6 +487,23 @@ end
 
 Control names (`"Mute1"`, `"Volume1"`, …) must match exactly across controls.lua, layout.lua, and runtime.lua.
 
+#### Comments
+
+- General comments go on the line **above** the code they describe, not inline. Inline comments only for granular single-expression clarification.
+- Add a doc block above **any function whose behavior isn't immediately obvious from its name**:
+
+```lua
+--[[ Summary: Parses a device status response and updates the matching indicator controls.
+    Params: data (string) — a single delimited response line from the device
+    Returns: nil
+]]
+function ParseResponse(data)
+  -- ...
+end
+```
+
+This is not "comment every function" — a well-named `Send` or `Connect` needs no doc block. Document the ones whose purpose, parameters, or side effects aren't self-evident.
+
 Structure your runtime logic with clear sections:
 ```lua
 --[[ Description
