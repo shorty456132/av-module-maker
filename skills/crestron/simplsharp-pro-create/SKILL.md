@@ -15,9 +15,13 @@ argument-hint: program description
   is not fully automatable here — document the manual step)
 
 ## Before writing code
+- Confirm this is a SIMPL# Pro job (standalone `.cpz`, 4-Series/VC-4), not SIMPL#:
+  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/SIMPLSHARP_OVERVIEW.md`.
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/SIMPLSHARP_PRO_CONSTRAINTS.md`.
 - Reuse patterns from `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/SIMPLSHARP_PRO_PATTERNS.md`.
-- For SDK/API questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/`.
+- For `Crestron.SimplSharp*` SDK/API questions, use the corpus per
+  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/SIMPLSHARP_API_CORPUS.md` — search via
+  the `crestron-lookup` sub-agent; never bulk-load or invent a signature.
 
 ## To implement
 - [ ] `CrestronControlSystem` subclass + `InitializeSystem`
