@@ -21,9 +21,11 @@
 
 ## Toolchain
 - Language: C# (the Crestron SIMPL# subset of .NET).
-- Output: `.clz`, loaded by SIMPL Windows as a custom module.
-- Built in: Visual Studio + the Crestron **SIMPL# library** project template.
-- Referenced from SIMPL+ by name (no extension, no path) — see Gotcha #6.
+- **.NET target: .NET Framework 4.7 (`net47`), 4-Series only** — **never** CF 3.5 /
+  VS 2008. Full build/version rules: [`../SIMPLSHARP_COMPILATION.md`](../SIMPLSHARP_COMPILATION.md).
+- Output: **`.clz`** (Crestron library archive, *not* a plain `.dll`), loaded by SIMPL
+  Windows as a custom module — built with the Crestron **SIMPL# 4-Series library** template.
+- Referenced from SIMPL+ by bare name (no extension, no path) — see Gotcha #6.
 
 ## Gotchas (must-know before writing a `.clz`)
 
@@ -32,28 +34,28 @@ compile errors in the C# sense — they are runtime/boundary mistakes that make 
 module *look* built while doing nothing, or that hang the SIMPL Windows program.
 Check these first.
 
-### 1. Stay inside the constrained runtime / limited BCL
+### 1. Target .NET Framework 4.7 (4-Series) — constrained runtime, no CF 3.5
 
-A SIMPL# library does **not** get the full desktop .NET Base Class Library. It runs
-on the control processor's embedded runtime, and only the supported subset of the
-BCL is available. The API reference records the exact support envelope on every
-member's version block:
+This repo builds SIMPL# libraries against **.NET Framework 4.7 (`net47`) for
+4-Series only**. Do **not** target .NET Compact Framework 3.5 or use Visual Studio
+2008 (the legacy 3-Series stack), and **never install CF 3.5** — 3-Series is out of
+scope. See [`../SIMPLSHARP_COMPILATION.md`](../SIMPLSHARP_COMPILATION.md) for the full
+build rules.
 
-- **.NET Compact Framework: Supported in 3.5** — the 3-Series runtime, and the
-  tightest common denominator. Code that must run on 3-Series is bound to CF 3.5.
-- **.NET: Supported in 6.0** — the 4-Series / VC-4 runtime.
+Even on `net47` this is still a **constrained runtime** — a SIMPL# library does not
+get the full desktop BCL; it runs on the control processor. Desktop-only APIs (much
+of `System.Threading`, `System.Net` sockets, reflection emit, `System.Drawing`,
+etc.) either aren't present or aren't supported — use the Crestron-provided
+equivalents (`Crestron.SimplSharp.*`) instead of `System.*` where one exists.
+Referencing an unsupported API compiles on your desktop and fails on the processor.
 
-Write to the **lowest target you must support**. Desktop-only APIs (much of
-`System.Threading`, `System.Net` sockets, LINQ-to-anything-heavy, reflection
-emit, `System.Drawing`, etc.) either aren't present or aren't supported — use the
-Crestron-provided equivalents (`Crestron.SimplSharp.*`) instead of `System.*`
-where one exists. Referencing an unsupported API compiles on your desktop and
-fails on the processor.
-
-> Source: version block present on ~1,395 of the 1,499 corpus files, e.g.
-> `SimplSharpDeviceHelper` class —
-> <https://help.crestron.com/SimplSharp/html/758c5ad5-dc50-5c34-01d6-b98c90367d00.htm>
-> ("Supported in: 6.0" / ".NET Compact Framework Supported in: 3.5").
+> **[project requirement]** `net47` + 4-Series-only + no-CF-3.5 is this repo's
+> confirmed build target (see the `simplsharp-net-target` memory) — **not** a corpus
+> fact. The API corpus version blocks state the *vendor* matrix (".NET Supported in
+> 6.0 / .NET Compact Framework 3.5", present on ~1,395 of 1,499 files, e.g.
+> `SimplSharpDeviceHelper` —
+> <https://help.crestron.com/SimplSharp/html/758c5ad5-dc50-5c34-01d6-b98c90367d00.htm>);
+> that matrix is Crestron's, and the CF 3.5 column is ignored here.
 
 ### 2. Cross the SIMPL+ boundary with `SimplSharpString`, not `System.String`
 
@@ -179,8 +181,8 @@ float pct  = SimplSharpDeviceHelper.UshortToPercent(raw);      // -> ~75.0
 > <https://help.crestron.com/SimplSharp/html/d3fde26a-53d5-d885-395e-9e9217be6b16.htm>
 
 ## Still to document
-- The full list of supported vs. unsupported `System.*` APIs under CF 3.5 (the
-  corpus records support per-member; there is no single manifest).
+- The full list of supported vs. unsupported `System.*` APIs on the `net47`
+  4-Series runtime (the corpus records support per-member; there is no single manifest).
 - `SimplSharpString` sizing/allocation limits across the boundary.
 - Structured feedback (multiple related values) vs. one delegate property per signal.
 

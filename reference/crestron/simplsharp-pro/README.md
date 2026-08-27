@@ -10,6 +10,8 @@ no SIMPL Windows.
   here. It lives at the shared corpus — see
   [`../SIMPLSHARP_API_CORPUS.md`](../SIMPLSHARP_API_CORPUS.md) for the path and how
   to search it (via the `crestron-lookup` sub-agent — do not bulk-load).
+- **Build / .NET version rules** → [`../SIMPLSHARP_COMPILATION.md`](../SIMPLSHARP_COMPILATION.md)
+  (`net47`, 4-Series only, **no CF 3.5**; `.cpz` output).
 
 Target-specific rules and skeletons land in this folder as
 `SIMPLSHARP_PRO_CONSTRAINTS.md` and `SIMPLSHARP_PRO_PATTERNS.md`. Each

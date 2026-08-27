@@ -25,9 +25,12 @@
 
 ## Toolchain
 - Language: C# (Crestron SIMPL# Pro / .NET).
-- Output: `.cpz`, runs **standalone** on 4-Series appliances and VC-4 — there is no
+- **.NET target: .NET Framework 4.7 (`net47`), 4-Series only** — **never** CF 3.5 /
+  VS 2008. Full build/version rules: [`../SIMPLSHARP_COMPILATION.md`](../SIMPLSHARP_COMPILATION.md).
+- Output: `.cpz`, runs **standalone** on 4-Series appliances / VC-4 — there is no
   SIMPL Windows program and no SIMPL+ wrapper (contrast SIMPL# → Gotcha #1).
-- Built in: Visual Studio + the Crestron SIMPL# Pro project template / MSBuild.
+- Built in: a modern Visual Studio (not VS 2008) with the Crestron SIMPL# Pro
+  (4-Series) project template / MSBuild.
 - Entry point: a class that derives from `CrestronControlSystem` (Gotcha #2).
 
 ## Gotchas (must-know before writing a `.cpz`)
@@ -52,24 +55,25 @@ a **SIMPL#** job, not SIMPL# Pro — see [`../SIMPLSHARP_OVERVIEW.md`](../SIMPLS
 > `Crestron.SimplSharpPro`, assembly `SimplSharpPro.dll`.
 > <https://help.crestron.com/SimplSharp/html/46269246-04c5-bc22-78ed-d86613dd8bbc.htm>
 
-### 2. Stay inside the constrained runtime / limited BCL
+### 2. Target .NET Framework 4.7 (4-Series) — constrained runtime, no CF 3.5
 
-Like SIMPL#, a SIMPL# Pro program runs on the processor's embedded runtime, not
-desktop .NET. Only the supported subset of the BCL is available, and the API
-reference records the exact support envelope on every member's version block:
+This repo builds SIMPL# Pro programs against **.NET Framework 4.7 (`net47`) for
+4-Series only** (appliances / VC-4). Do **not** target .NET Compact Framework 3.5 or
+use Visual Studio 2008, and **never install CF 3.5** — 3-Series is out of scope. See
+[`../SIMPLSHARP_COMPILATION.md`](../SIMPLSHARP_COMPILATION.md) for the full build rules.
 
-- **.NET: Supported in 6.0** — the 4-Series / VC-4 runtime (the SIMPL# Pro target).
-- **.NET Compact Framework: Supported in 3.5** — the older 3-Series runtime.
+Even on `net47` this is still a **constrained runtime** — the program runs on the
+appliance, not desktop .NET, so only a subset of the BCL is available. Prefer the
+Crestron-provided primitives (`Crestron.SimplSharp.*` — `CrestronConsole`,
+`CrestronThread`, `CTimer`, the Crestron socket classes) over their `System.*`
+equivalents; a desktop-only API compiles on your workstation and fails on the appliance.
 
-Write to the runtime you actually deploy on. Prefer the Crestron-provided primitives
-(`Crestron.SimplSharp.*` — `CrestronConsole`, `CrestronThread`, `CTimer`, the Crestron
-socket classes) over their `System.*` equivalents; a desktop-only API compiles on your
-workstation and fails on the appliance.
-
-> Source: version block present on ~1,395 of the 1,499 corpus files, e.g. the
-> `CrestronControlSystem` class page ("Supported in: 6.0" / ".NET Compact Framework
-> Supported in: 3.5") —
-> <https://help.crestron.com/SimplSharp/html/46269246-04c5-bc22-78ed-d86613dd8bbc.htm>
+> **[project requirement]** `net47` + 4-Series-only + no-CF-3.5 is this repo's
+> confirmed build target (see the `simplsharp-net-target` memory) — **not** a corpus
+> fact. The API corpus version blocks state the *vendor* matrix (".NET Supported in
+> 6.0 / .NET Compact Framework 3.5", e.g. the `CrestronControlSystem` page —
+> <https://help.crestron.com/SimplSharp/html/46269246-04c5-bc22-78ed-d86613dd8bbc.htm>);
+> that matrix is Crestron's, and the CF 3.5 column is ignored here.
 
 ### 3. `InitializeSystem()` must not block — offload real work to a thread
 
