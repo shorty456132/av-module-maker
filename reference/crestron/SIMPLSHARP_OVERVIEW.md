@@ -17,10 +17,11 @@
 |---|---|---|
 | Artifact | `.clz` (C# class library) | `.cpz` (standalone program) |
 | Reaches the program via | A **SIMPL+ `.usp` wrapper** exposes the C# class's methods/callbacks as signals; that wrapper is the **SIMPL Windows** symbol | Nothing — it *is* the program. A `CrestronControlSystem` entry class runs directly on the appliance |
-| Runs on | 3-Series / 4-Series, inside a SIMPL Windows program | **4-Series appliances / VC-4** |
+| Runs on | **4-Series** (this repo's target), inside a SIMPL Windows program | **4-Series appliances / VC-4** |
 | Needs SIMPL Windows? | **Yes** — the `.clz` has no symbol of its own; the `.usp` wrapper is what appears in SIMPL Windows | **No** — there is no SIMPL Windows program at all |
 | Deliverable shape | **Two parts:** `.clz` **+** a SIMPL+ `.usp` wrapper | One part: the `.cpz` |
-| Toolchain | Visual Studio + Crestron **SIMPL# library** project template | Visual Studio + Crestron **SDK / MSBuild** |
+| .NET target | **`net47`** default, 4-Series — **never** CF 3.5 (SDK also ships `net6.0`) | **`net47`** default, 4-Series (SDK also ships `net6.0`) |
+| Toolchain | Modern VS + **`Crestron.SimplSharp.SDK.Library`** NuGet → `.clz` | Modern VS + **`Crestron.SimplSharp.SDK.Program`** NuGet → `.cpz` |
 | In-repo skills | `simplsharp-create`, `simplsharp-revise` | `simplsharp-pro-create`, `simplsharp-pro-revise` |
 
 ## When to use which
@@ -97,3 +98,5 @@ bulk-loading it — the canonical corpus pointer is `SIMPLSHARP_API_CORPUS.md`
 
 - API reference: `SIMPLSHARP_API_CORPUS.md` (Slice 2) → shared corpus via the
   `crestron-lookup` sub-agent.
+- Build / .NET version rules: [`SIMPLSHARP_COMPILATION.md`](SIMPLSHARP_COMPILATION.md)
+  → `net47`, 4-Series only, no CF 3.5; `.clz`/`.cpz` output and the `.clz`→`.usp` chain.
