@@ -15,7 +15,7 @@ Requires the Crestron SIMPL+ compiler, installed by default to:
 --compiler flag or the SPLUSCC environment variable.
 
 Usage:
-  python compile.py <file.usp | directory> [more ...] [options]
+  python simplplus_build.py <file.usp | directory> [more ...] [options]
 
 A directory argument compiles every .usp it contains (non-recursive).
 
@@ -31,10 +31,10 @@ Options:
   --errorcodes      Pass \\errorcodes to show compilation error codes
 
 Examples:
-  python compile.py MyModule.usp
-  python compile.py MyModule.usp --target=series3,series4
-  python compile.py a.usp b.usp --target=series2,series3
-  python compile.py ./src --target=series3        # compile every .usp in ./src
+  python simplplus_build.py MyModule.usp
+  python simplplus_build.py MyModule.usp --target=series3,series4
+  python simplplus_build.py a.usp b.usp --target=series2,series3
+  python simplplus_build.py ./src --target=series3        # compile every .usp in ./src
 """
 
 import glob

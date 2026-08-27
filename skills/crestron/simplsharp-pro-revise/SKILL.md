@@ -9,9 +9,13 @@ argument-hint: project file or directory path
 > **Status: stub.** Structure and contract only — implementation to follow.
 
 ## Before revising
+- Confirm this is a SIMPL# Pro job (standalone `.cpz`, 4-Series/VC-4), not SIMPL#:
+  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/SIMPLSHARP_OVERVIEW.md`.
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/SIMPLSHARP_PRO_CONSTRAINTS.md` and
   `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/SIMPLSHARP_PRO_PATTERNS.md`.
-- For SDK/API questions, search `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp-pro/`.
+- For `Crestron.SimplSharp*` SDK/API questions, use the corpus per
+  `${CLAUDE_PLUGIN_ROOT}/reference/crestron/SIMPLSHARP_API_CORPUS.md` — search via
+  the `crestron-lookup` sub-agent; never bulk-load or invent a signature.
 
 ## To implement
 - [ ] Audit control-system lifecycle, threading, and program-stop handling
