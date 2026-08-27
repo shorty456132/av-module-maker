@@ -10,7 +10,7 @@ argument-hint: module description
 - **Language:** SIMPL+ (C-like)
 - **Artifact:** `.usp` source → `.ush` compiled, used inside a SIMPL Windows program
 - **Toolchain:** SIMPL+ Cross Compiler (`SPlusCC.exe`), driven by
-  `scripts/crestron/compile.py`. Compilation **is** automatable on a Windows host
+  `scripts/crestron/simplplus_build.py`. Compilation **is** automatable on a Windows host
   with the Crestron SIMPL+ toolchain installed — see **Compile & verify** below.
 
 ## Before writing code
@@ -42,7 +42,7 @@ After writing the `.usp`, compile it to confirm it builds — do not consider th
 module done until it compiles with 0 errors:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/compile.py" <path/to/module.usp>
+python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplplus_build.py" <path/to/module.usp>
 ```
 
 - With no `--target`, the module builds for **both current generations**

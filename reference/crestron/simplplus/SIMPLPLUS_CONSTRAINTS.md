@@ -156,7 +156,7 @@ an older value). Dropped into SIMPL Windows the module shows **no I/O and no
 parameters** — the classic symptom of this bug.
 
 This bites because agent file-writers (and many editors on non-Windows hosts)
-emit LF-only files. `scripts/crestron/compile.py` guards against it by normalizing
+emit LF-only files. `scripts/crestron/simplplus_build.py` guards against it by normalizing
 every `.usp` to CRLF (`ensure_crlf`) before invoking the compiler, so compiling
 through that script is always safe. If you write or hand-edit a `.usp` any other
 way, ensure it is saved CRLF before compiling.

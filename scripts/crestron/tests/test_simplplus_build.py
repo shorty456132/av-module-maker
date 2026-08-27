@@ -1,4 +1,4 @@
-"""Unit tests for the SIMPL+ compiler wrapper (scripts/crestron/compile.py).
+"""Unit tests for the SIMPL+ compiler wrapper (scripts/crestron/simplplus_build.py).
 
 These test the pure logic only — command construction and parsing of the
 real SPlusCC.exe console output. No subprocess is spawned, so they run on
@@ -16,7 +16,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import compile as c  # noqa: E402
+import simplplus_build as c  # noqa: E402
 
 
 # --- Real SPlusCC.exe output captures ------------------------------------
@@ -189,7 +189,7 @@ def test_parse_warning():
 # SPlusCC.exe silently drops every INPUT/OUTPUT/PARAMETER declaration when the
 # .usp source is LF-only: it still compiles with 0 errors but emits a
 # degenerate .ush with zero I/O (no cues, MinVariable*=0). The source MUST use
-# CRLF line endings, so compile.py normalizes each .usp before invoking the
+# CRLF line endings, so simplplus_build.py normalizes each .usp before invoking the
 # compiler.
 
 def test_ensure_crlf_converts_lf_only(tmp_path):

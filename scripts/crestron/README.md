@@ -1,6 +1,43 @@
 # Crestron build/helper scripts
 
-## `compile.py` — SIMPL+ (.usp) command-line compiler
+## `simplsharp_build.py` — SIMPL# (.clz + .usp) end-to-end build
+
+Builds a **complete SIMPL# deliverable** with one command by chaining the two
+toolchains a SIMPL# module needs. A SIMPL# module is always two parts — a C#
+`.clz` and a SIMPL+ `.usp` wrapper — built by two different compilers; this
+orchestrates them in the right order with the manual seam closed.
+
+```
+python simplsharp_build.py <project.csproj> <wrapper.usp> [options]
+python simplsharp_build.py --project=<csproj> --wrapper=<usp> [options]
+```
+
+Four steps, stopping at the first failure:
+
+1. **`dotnet build`** the C# project → `.clz` (Visual Studio not required).
+2. **Locate the `.clz`** on disk — this catches the **`-> .dll` decoy**: MSBuild's
+   log prints only the `.dll`, while the Crestron SDK target emits the `.clz` beside
+   it. A build that produced only a `.dll` (SDK target didn't run) **fails here**
+   instead of silently.
+3. **Copy the `.clz` next to the `.usp`** so `#USER_SIMPLSHARP_LIBRARY "Name"`
+   resolves it by bare name.
+4. **`SPlusCC.exe` compile the `.usp`** (reuses `simplplus_build.py`, incl. CRLF fixup).
+
+| Option | Description |
+|---|---|
+| `--config=NAME` | Build configuration (default `Debug`) |
+| `--target=LIST` | SIMPL+ targets for the wrapper (default `series4` — SIMPL# is `net47`/4-Series only) |
+| `--no-restore` | Pass `--no-restore` to `dotnet build` |
+| `--dotnet=PATH` | Path to the `dotnet` executable (default: `dotnet` on PATH) |
+| `--compiler=PATH` | Path to `SPlusCC.exe` (passed through to `simplplus_build.py`) |
+| `--silent` / `--errorcodes` | Passed through to the SIMPL+ compile |
+
+Requires the **.NET SDK** (`dotnet`) for the `.clz` and **`SPlusCC.exe`** for the
+`.usp` (see below). Exit code is `0` only if every step succeeds. See
+`reference/crestron/SIMPLSHARP_COMPILATION.md` for the build rules and the
+`-> .dll` decoy in depth.
+
+## `simplplus_build.py` — SIMPL+ (.usp) command-line compiler
 
 Compiles SIMPL+ source (`.usp`) into its Crestron artifacts by driving the
 Crestron command-line compiler `SPlusCC.exe` — **no SIMPL Windows GUI required**.
@@ -20,7 +57,7 @@ Override with `--compiler=<path>` or the `SPLUSCC` environment variable.
 ### Usage
 
 ```
-python compile.py <file.usp | directory> [more ...] [options]
+python simplplus_build.py <file.usp | directory> [more ...] [options]
 ```
 
 A **directory** argument compiles every `.usp` it contains (non-recursive, in
@@ -36,10 +73,10 @@ one compiler invocation) and reports the generated artifacts per module.
 | `--errorcodes` | Show compilation error codes (`\errorcodes`) |
 
 ```bash
-python compile.py MyModule.usp
-python compile.py MyModule.usp --target=series3,series4
-python compile.py a.usp b.usp --target=series2,series3
-python compile.py ./src --target=series3        # every .usp in ./src
+python simplplus_build.py MyModule.usp
+python simplplus_build.py MyModule.usp --target=series3,series4
+python simplplus_build.py a.usp b.usp --target=series2,series3
+python simplplus_build.py ./src --target=series3        # every .usp in ./src
 ```
 
 Exit code is `0` on a clean compile, non-zero if the compiler reports any error.

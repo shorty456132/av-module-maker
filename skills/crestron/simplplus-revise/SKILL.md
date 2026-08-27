@@ -35,7 +35,7 @@ Compile the revised `.usp` to confirm it still builds — a revision isn't done
 until it compiles with 0 errors:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/compile.py" <path/to/module.usp>
+python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplplus_build.py" <path/to/module.usp>
 ```
 
 - With no `--target`, the module builds for **both current generations**

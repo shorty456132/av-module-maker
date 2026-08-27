@@ -21,7 +21,7 @@
 | **3-Series** | **Out of scope.** Do not target it. |
 | **.NET Compact Framework 3.5** | **Never.** Do not target it, and **never try to install CF 3.5.** |
 | **Visual Studio 2008** | **Never.** It is the legacy 3-Series/CF-3.5 toolchain — obsolete here. |
-| **Build tool** | A modern Visual Studio with the Crestron **`Crestron.SimplSharp.SDK.*`** NuGet packages (below). No VS 2008, no CF-3.5 extension. |
+| **Build tool** | **`dotnet build` / MSBuild** driving the Crestron **`Crestron.SimplSharp.SDK.*`** NuGet packages (below). **Visual Studio is optional, not required** — it only wraps the same MSBuild + SDK targets. No VS 2008, no CF-3.5 extension. |
 
 > **[project requirement]** `net47` + 4-Series-only + no-CF-3.5 is this repo's
 > **default** build environment (see the `simplsharp-net-target` memory). Never
@@ -59,6 +59,30 @@ packages, each producing a different artifact:
   longer used).
 - A build warning **`The target 'ResolveSDKReferences' does not exist in the project`**
   is benign — it clears on rebuild.
+
+### Building from the command line (no Visual Studio) — **confirmed 2026-08**
+
+`dotnet build` (or `dotnet restore` + `dotnet build`) on the SDK-style `.csproj`
+produces the `.clz`. Reproduced against `Crestron.SimplSharp.SDK.Library` v2.21.x
+targeting `net47` — restore and build both exit 0 and emit a valid, loadable `.clz`.
+
+```sh
+dotnet build src/PresetStore/PresetStore.csproj -c Debug
+ls  bin/Debug/net47/PresetStore.clz     # the artifact (dir on PowerShell)
+```
+
+> **The `-> .dll` decoy (why a good build looks like a failure).** MSBuild's
+> console prints its *primary* output — `PresetStore -> …\bin\Debug\net47\PresetStore.dll`.
+> The **`.clz` never appears in that log line**; the Crestron SDK target emits it as a
+> side artifact into the **same `bin\Debug\net47\` folder**. Watching the log for the
+> string "clz" and seeing only ".dll" is *not* a failed build — the `.clz` is sitting
+> right beside the `.dll`. Always confirm by listing the folder, not by reading the log.
+>
+> A real `.clz` is a ~MB **zip archive** containing the compiled assembly, the
+> `SimplSharp*Interface.dll` set, **and `SimplSharpData.dat` / `.der`** (the signed
+> metadata SIMPL Windows reads to discover the class's public API). A bare `.dll` with
+> no `.clz` next to it is the genuine failure — it means the SDK target did not run
+> (wrong package, or a plain `Microsoft.NET.Sdk` project with no SDK.Library reference).
 
 > Sources (Crestron_Electronics, nuget.org):
 > [SDK.Library](https://www.nuget.org/packages/Crestron.SimplSharp.SDK.Library/) ·
@@ -100,18 +124,37 @@ The deep rules for that boundary — reference directive, marshaling types, non-
 ## "Compiled correctly" — how to sanity-check
 
 - **SIMPL# library:** the build produces a **`.clz`** (not just a `.dll`), targeting
-  **`net47`**. If SIMPL+ can't resolve `#USER_SIMPLSHARP_LIBRARY "Name"`, the `.clz`
-  isn't on the search path (project folder → global SIMPL+ folder → `#INCLUDEPATH`) —
-  it is **not** a path/extension issue in the directive (bare name only).
+  **`net47`**. Confirm by **listing `bin\Debug\net47\` for the `.clz`** — do *not* trust
+  the MSBuild `-> …\.dll` log line (see the `-> .dll` decoy above). If SIMPL+ can't
+  resolve `#USER_SIMPLSHARP_LIBRARY "Name"`, the `.clz` isn't on the search path
+  (project folder → global SIMPL+ folder → `#INCLUDEPATH`) — it is **not** a
+  path/extension issue in the directive (bare name only).
 - **SIMPL# Pro:** the build produces a **`.cpz`** for 4-Series.
 - **Wrong runtime symptom:** a `net47`/4-Series mismatch, or an API that only exists
   on desktop .NET, compiles on the workstation and **fails on the processor** — keep
   to the constrained BCL and Crestron primitives (per the constraints files).
 
+## Building the full deliverable in one command — `simplsharp_build.py`
+
+The chain is **two toolchains**: the `.clz` is built by `dotnet build`; the `.usp`
+wrapper is compiled by `SPlusCC.exe` (via `scripts/crestron/simplplus_build.py`).
+**`scripts/crestron/simplsharp_build.py`** orchestrates both so you don't run — or
+mis-order — them by hand:
+
+```sh
+python scripts/crestron/simplsharp_build.py <project.csproj> <wrapper.usp>
+```
+
+It runs, stopping at the first failure: **1)** `dotnet build` → **2)** locate the
+`.clz` on disk (this is what catches the `-> .dll` decoy — a build that emits only a
+`.dll` fails here, not silently) → **3)** copy the `.clz` beside the `.usp` so
+`#USER_SIMPLSHARP_LIBRARY "Name"` resolves by bare name → **4)** `SPlusCC.exe`
+compile the wrapper. Targets **`series4`** by default (SIMPL# is `net47`/4-Series
+only), reuses `simplplus_build.py`'s CRLF-normalization and error parsing, and exits non-zero
+if any step fails. Verified end-to-end (2026-08): a clean run produces the `.clz`,
+stages it, and compiles the `.usp` to a `.ush` with full I/O.
+
 ## Still to document
-- Exact modern Visual Studio version(s) validated against the current SDK (the SDK is
-  now NuGet-delivered, so no version-locked template is required, but a known-good VS
-  baseline is still worth pinning).
 - Full `net47` `.csproj` shape *after* the SDK's first-build rewrite (target framework,
   package references, output type) — capture a real post-build `.csproj` as the sample.
 - Any signing / packaging / output-path conventions for shipping the `.clz`/`.cpz`.
