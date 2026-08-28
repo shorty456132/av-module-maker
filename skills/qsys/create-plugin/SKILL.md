@@ -487,51 +487,19 @@ end
 
 Control names (`"Mute1"`, `"Volume1"`, …) must match exactly across controls.lua, layout.lua, and runtime.lua.
 
-#### Comments
+#### Comments & Structure
 
-- General comments go on the line **above** the code they describe, not inline. Inline comments only for granular single-expression clarification.
-- Add a doc block above **any function whose behavior isn't immediately obvious from its name**:
+Both the comment rules and the runtime script layout are house standards, not plugin-specific:
 
-```lua
---[[ Summary: Parses a device status response and updates the matching indicator controls.
-    Params: data (string) — a single delimited response line from the device
-    Returns: nil
-]]
-function ParseResponse(data)
-  -- ...
-end
-```
+- **Comments and function doc blocks** — see the *Comments & Documentation* section of
+  `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_CONSTRAINTS.md` for the required doc-block format
+  and when a function warrants one.
+- **Section order and dividers** — see *Script Organization* in
+  `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_PATTERNS.md`. `runtime.lua` follows that same
+  six-part order and uses the `--*** Name ***` divider form.
 
-This is not "comment every function" — a well-named `Send` or `Connect` needs no doc block. Document the ones whose purpose, parameters, or side effects aren't self-evident.
-
-Structure your runtime logic with clear sections:
-```lua
---[[ Description
-    Describe the plugin's runtime behavior
-]]
-
---------------------
--- Components ------
---------------------
--- End Components --
-
---------------------
--- Variables -------
---------------------
--- End Variables ---
-
---------------------
--- Functions -------
---------------------
--- End Functions ---
-
---------------------
--- EventHandlers ---
---------------------
---End Eventhandlers-
-
--- Initialize --
-```
+Open `runtime.lua` with a header block naming the plugin, its one-sentence purpose, and any
+named components it depends on.
 
 #### Debug Logging
 
