@@ -8,7 +8,7 @@
       "name": "module-maker",
       "source": "./",
       "version": "0.4.2",
-      "description": "Scaffold, compile, and revise Q-SYS plugins (with Crestron and Extron module support planned) from a Claude Code session in any project."
+      "description": "Scaffold, compile, and revise Q-SYS plugins, Crestron and Extron modules"
     }
   ]
 }

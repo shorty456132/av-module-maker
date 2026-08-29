@@ -2,11 +2,12 @@
   "name": "module-maker",
   "displayName": "Module Maker",
   "version": "0.4.2",
-  "description": "Scaffold, compile, and revise Q-SYS plugins (with Crestron and Extron module support planned) from a Claude Code session in any project.",
+  "description": "Scaffold, compile, and revise Q-SYS plugins, Crestron and Extron modules",
   "author": {
-    "name": "Andrew Laiacano"
+    "name": "Andrew Laiacano",
+    "url": "https://github.com/shorty456132"
   },
   "license": "MIT",
-  "keywords": ["qsys", "q-sys", "plugin", "lua", "crestron", "simpl", "simpl-sharp", "extron", "av", "audio-visual"],
+  "keywords": ["qsys", "q-sys", "plugin", "lua", "crestron", "simpl", "simpl-sharp", "simpl#", "extron", "av", "audio-visual"],
   "skills": ["./skills/qsys/", "./skills/crestron/"]
 }
