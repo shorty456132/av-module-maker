@@ -10,6 +10,26 @@ Create a complete Q-SYS plugin based on the following description:
 
 **$ARGUMENTS**
 
+## Non-Negotiables
+
+These rules are detailed later or in the reference files, but they are the ones that most
+often get missed — hold them the whole way through, and confirm each in the Consistency
+Checklist before finishing:
+
+- **Unique random GUID per plugin** — generate a fresh `Id` for `info.lua`; never reuse.
+- **Connection details are runtime controls, never properties** — IP, port, credentials,
+  device IDs go in Text controls on a **Setup** page. See `QSYS_CONSTRAINTS.md` →
+  *Connection Parameters*.
+- **Control arrays never use `Count` > 1** — drive a property-based loop; control names
+  must be character-identical across `controls.lua`, `layout.lua`, `runtime.lua`. See
+  `QSYS_PATTERNS.md` → *Control Arrays*.
+- **TCP/UDP `ReadTimeout`/`WriteTimeout` default to `0`** — non-zero only for TCP servers.
+- **Device plugins log TX/RX + errors/state changes** — funnel through one `Send` /
+  `ParseResponse` pair. See `QSYS_CONSTRAINTS.md` → *Debug Logging*.
+- **Every layout follows the Visual Requirements** — see `QSYS_PATTERNS.md` → *Layout &
+  Visual Requirements* (build version shown, dark-bg GroupBox, a label per control,
+  contrast, meaningful button colors, `UnlinkOffColor` on toggles).
+
 ## Output Directory
 
 Before creating any files, ask the user where they want the plugin files placed. Suggest a default directory name based on the plugin name (e.g., `./My-Plugin/`). Create the directory if it doesn't exist, then write all `.lua` files into it.
@@ -40,18 +60,15 @@ If the topic isn't in the index or the page can't be fetched, fall back to a pat
 
 Also read `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_PATTERNS.md` before writing Lua — most common needs (sockets, timers, JSON, control types, reserved names) are already answered there, no subagent required. And read `${CLAUDE_PLUGIN_ROOT}/reference/qsys/QSYS_CONSTRAINTS.md` before writing or revising any Lua — it covers design-time vs runtime rules, control-array conventions, naming/scoping rules, and the platform's most common pitfalls.
 
-## Connection Settings as Runtime Controls (IMPORTANT)
+## Connection Settings as Runtime Controls
 
-Device connection details like **IP addresses, port numbers, display IDs, device keys, usernames, and passwords** must be **runtime-settable controls**, NOT properties. Properties are baked in at design-time and cannot be changed without editing the design.
-
-
-**Rules:**
-- Create these as **Text controls** in `controls.lua` (e.g., `IPAddress`, `Port`, `DeviceID`)
-- Place them on a **"Setup"** or **"Settings" page** in `layout.lua` — separate from the main control page
-- In `runtime.lua`, read connection values from `Controls["IPAddress"].String`, `Controls["Port"].String`, etc.
-- Use the Q-SYS reserved control names where applicable: `IPAddress`, `Username`, `Password` — these enable built-in Q-SYS features
-- The plugin should have at least 2 pages: **"Control"** (main controls) and **"Setup"** (connection settings)
-- Only put things in **properties** that truly need to be design-time only (e.g., number of channels, model selection, protocol type)
+Device connection details (**IP, port, display IDs, device keys, usernames, passwords**)
+are **runtime Text controls on a Setup page**, never properties — see the Non-Negotiables
+above and `QSYS_CONSTRAINTS.md` → *Connection Parameters* for the full rule set (reserved
+names, tear-down/re-establish on change, blocking-issue handling). The scaffolding
+consequence: the plugin has at least two pages — **"Control"** (main) and **"Setup"**
+(connection) — and only genuinely design-time values (channel count, model, protocol type)
+belong in `properties.lua`.
 
 **Example controls.lua pattern for connection settings:**
 ```lua
@@ -318,30 +335,9 @@ Two things the scaffold must get right: the same loop bound must be read in all 
 ### layout.lua
 Position controls using a `layout` table keyed by control name. Uses `props["page_index"]` for multi-page support.
 
-**Visual Design Requirements — Every plugin layout MUST follow these rules:**
-
-1. **Include the build version in the bottom left of each plugin**
-1. **Use a dark background GroupBox** as the plugin canvas (first graphic, lowest ZOrder)
-2. **Group related controls** inside lighter GroupBox sections with descriptive titles
-3. **Use Header graphics** to label major sections
-4. **Use Label graphics** next to every control so users know what each control does
-5. **Ensure text contrast** — use light text (`{255,255,255}` or `{221,221,221}`) on dark backgrounds, dark text (`{0,0,0}`) on light backgrounds
-6. **Color buttons meaningfully** — e.g., green for connect/enable, red for disconnect/stop, blue for actions, gray for settings
-7. **Use `UnlinkOffColor`** on toggle buttons so on/off states are visually distinct (e.g., green on, dark gray off)
-8. **Set `ButtonVisualStyle = "Flat"`** for a modern, clean look
-9. **Set `CornerRadius`** on buttons (4–8px) and GroupBoxes (8px) for rounded edges
-10. **Use consistent spacing** — align controls on a grid, use uniform padding (10px from GroupBox edges, 5px between controls)
-11. **Set `FontSize`** appropriately — 14+ for headers, 11–12 for labels, 10 for small status text
-12. **Use the `Legend` property** on buttons to label them instead of relying on separate text labels
-13. **Use `Icon` on buttons** when applicable — e.g., `Icon = "Power"` for power buttons in the control definition (`controls.lua`)
-14. **Status indicators** should use LED style with colored on/off states
-15. **Size controls appropriately** — buttons at least `{80, 24}`, text fields at least `{150, 24}`, LEDs `{16, 16}`
-
-**Available layout Style values:** `"Fader"`, `"Knob"`, `"Button"`, `"Text"`, `"Meter"`, `"Led"`, `"ListBox"`, `"ComboBox"`, `"Media"`, `"None"`
-
-**Available graphic Type values:** `"Label"`, `"GroupBox"`, `"Header"`, `"Image"`, `"Svg"`
-
-**Available fonts:** `"Roboto"` (default), `"Montserrat"`, `"Open Sans"`, `"Lato"`, `"Poppins"`, `"Roboto Mono"` (monospace), `"Noto Serif"`, `"Roboto Slab"`
+**Every plugin layout MUST follow the Visual Requirements** in `QSYS_PATTERNS.md` →
+*Layout & Visual Requirements* — the 15 rules plus the available Style / graphic Type /
+font values. The example below demonstrates them; hold to all 15 when you deviate from it.
 
 **Example of a well-styled layout:**
 ```lua
@@ -583,6 +579,11 @@ Before finishing, verify:
 - [ ] All `table.insert` calls target the correct local variable (`ctrls`, `props`, `pages`, etc.)
 - [ ] Control arrays use property-driven loops (not `Count` > 1) with matching names across controls.lua, layout.lua, and runtime.lua
 - [ ] Looped control names are consistent (e.g., `"Mute" .. i` produces `"Mute1"`, `"Mute2"` — same pattern in all files)
+- [ ] `info.lua` has a unique, randomly generated GUID (not reused from another plugin)
+- [ ] Connection details (IP, port, credentials) are Text controls on a Setup page — none live in `properties.lua`
+- [ ] TCP/UDP `ReadTimeout`/`WriteTimeout` default to `0` (non-zero only for TCP servers)
+- [ ] Device plugins funnel TX/RX through a single logged `Send` / `ParseResponse` pair, with error/state prints
+- [ ] Layout satisfies the Visual Requirements — build version shown, dark-bg GroupBox, a label per control, text contrast, meaningful button colors, `UnlinkOffColor` on toggles
 
 ## Compiling
 

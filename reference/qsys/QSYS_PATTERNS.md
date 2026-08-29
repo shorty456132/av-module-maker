@@ -452,6 +452,45 @@ layout["Volume 1"] = {
 
 ---
 
+## Layout & Visual Requirements
+
+Every plugin layout MUST follow these rules. The `create-plugin` scaffold emits a styled
+example layout; these are the rules that example demonstrates.
+
+1. **Include the build version** in the bottom left of each plugin
+2. **Use a dark background GroupBox** as the plugin canvas (first graphic, lowest ZOrder)
+3. **Group related controls** inside lighter GroupBox sections with descriptive titles
+4. **Use Header graphics** to label major sections
+5. **Use Label graphics** next to every control so users know what each control does
+6. **Ensure text contrast** — light text (`{255,255,255}` or `{221,221,221}`) on dark
+   backgrounds, dark text (`{0,0,0}`) on light backgrounds
+7. **Color buttons meaningfully** — green for connect/enable, red for disconnect/stop,
+   blue for actions, gray for settings
+8. **Use `UnlinkOffColor`** on toggle buttons so on/off states are visually distinct
+   (e.g., green on, dark gray off)
+9. **Set `ButtonVisualStyle = "Flat"`** for a modern, clean look
+10. **Set `CornerRadius`** on buttons (4–8px) and GroupBoxes (8px) for rounded edges
+11. **Use consistent spacing** — align controls on a grid, uniform padding (10px from
+    GroupBox edges, 5px between controls)
+12. **Set `FontSize`** appropriately — 14+ for headers, 11–12 for labels, 10 for small
+    status text
+13. **Use the `Legend` property** on buttons to label them instead of a separate text label
+14. **Use `Icon` on buttons** when applicable — e.g., `Icon = "Power"` for power buttons
+    (set in the control definition, `controls.lua`)
+15. **Status indicators** use LED style with colored on/off states; **size controls
+    appropriately** — buttons at least `{80, 24}`, text fields at least `{150, 24}`,
+    LEDs `{16, 16}`
+
+**Available layout Style values:** `"Fader"`, `"Knob"`, `"Button"`, `"Text"`, `"Meter"`,
+`"Led"`, `"ListBox"`, `"ComboBox"`, `"Media"`, `"None"`
+
+**Available graphic Type values:** `"Label"`, `"GroupBox"`, `"Header"`, `"Image"`, `"Svg"`
+
+**Available fonts:** `"Roboto"` (default), `"Montserrat"`, `"Open Sans"`, `"Lato"`,
+`"Poppins"`, `"Roboto Mono"` (monospace), `"Noto Serif"`, `"Roboto Slab"`
+
+---
+
 ## Control Types Reference
 
 | Type | Required Field | Values |
