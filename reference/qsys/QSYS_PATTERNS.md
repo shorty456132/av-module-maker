@@ -1,14 +1,51 @@
 # Q-SYS Lua Code Patterns Reference
 
 Reference material for writing Q-SYS plugin Lua. Read this file when generating or revising
-plugin code — it is **not** loaded automatically. `CLAUDE.md` holds the hard constraints;
-this file holds the patterns those constraints imply.
+plugin code — it is **not** loaded automatically. `QSYS_CONSTRAINTS.md` holds the hard
+constraints; this file holds the patterns those constraints imply.
+
+---
+
+## Script Organization
+
+Every runtime script follows this section order. Do not invent a different layout.
+
+1. Header comment block
+2. Constants
+3. Global variables and component references
+4. Helper functions
+5. Event handlers
+6. Initialization block
+
+```lua
+-- [Component Name]
+-- [One sentence: what this script does]
+-- Dependencies: [named components referenced, or "none"]
+
+--*** Constants ***
+POLL_INTERVAL = 5
+
+--*** Globals ***
+-- Sockets, timers, and component references are global by necessity: a local
+-- one is garbage collected and silently stops working. See QSYS_CONSTRAINTS.md.
+TCP = TcpSocket.New()
+PollTimer = Timer.New()
+Mixer = Component.New("Main Gain")
+
+--*** Helper Functions ***
+
+--*** Event Handlers ***
+
+--*** Initialization ***
+```
+
+Section dividers use the `--*** Name ***` form throughout.
 
 ---
 
 ## Control Arrays — Full Property-Driven Loop Example
 
-`CLAUDE.md` forbids `Count` > 1. This is the full four-file pattern it replaces:
+`QSYS_CONSTRAINTS.md` forbids `Count` > 1. This is the full four-file pattern it replaces:
 
 ```lua
 -- In properties.lua: define a property for the count
@@ -75,12 +112,17 @@ Controls["MyControl"].IsInvisible = not shouldShow
 Prefer dispatch table patterns for cleaner separation of concerns. Use metatables only when
 inheritance is truly needed.
 
+### Deep Modules — Simple Interface, Rich Functionality
+Design modules and helper classes to be "deep": expose a simple, abstract interface
+(functions and properties) and hide the implementation complexity behind it. Hiding internal
+state reduces cognitive load and makes the script easier for whoever maintains it next.
+
 ### Loop Variable Capture
 Always capture loop variables in local variables before using them in closures/EventHandlers:
 ```lua
 for i = 1, count do
   local idx = i  -- capture
-  Controls["Button " .. idx].EventHandler = function()
+  Controls["Button" .. idx].EventHandler = function()
     print("Button " .. idx .. " pressed")
   end
 end
@@ -216,6 +258,42 @@ SSH:Connect(ip, 22, username, password)
 
 ---
 
+## Timers
+
+Use the Q-SYS `Timer` object for all delays and periodic work — never busy loops,
+`while true do`, or Lua's native delay/time functions.
+
+- **Create with `Timer.New()`** and store the handle in a **global** at script level, never
+  inside a function body. A locally-scoped timer is garbage collected and silently stops
+  (QSC's own example shows a `local` timer dying after ~22 iterations).
+- **Assign the callback via `.EventHandler`.** The handler receives the timer object as its
+  argument, so one handler can serve several timers by comparing identity
+  (`if t == PollTimer then ... end`).
+- **`Timer:Start(periodSeconds)` repeats every `periodSeconds` until `Timer:Stop()` is
+  called.** It does **not** fire once — this is the most commonly misread part of the API.
+- **`Timer:Stop()`** ends repetition; **`Timer:IsRunning()`** returns a boolean.
+- For a one-shot delay prefer **`Timer.CallAfter(fn, delay)`** — calls `fn` once after
+  `delay` seconds, no `:Stop()` needed.
+- **`Timer.Now()`** returns seconds since epoch — the value **differs between Emulation mode
+  and Run mode**, so never persist or compare it across modes.
+
+```lua
+-- Global handle — required so the GC does not destroy it
+PollTimer = Timer.New()
+
+PollTimer.EventHandler = function()
+  -- runs every POLL_INTERVAL seconds until PollTimer:Stop()
+  Poll()
+end
+
+-- repeats until stopped
+PollTimer:Start(POLL_INTERVAL)
+```
+
+The Heartbeat and Polling Timer patterns below apply these rules.
+
+---
+
 ## Connection Health
 
 ### Heartbeat
@@ -302,12 +380,21 @@ Crypto.Hmac("SHA256", data, key)
 ## Design Integration
 
 ### Named Components
-Access existing design components by name:
+Access existing design components by name. Store the result in a **global** at the top of the
+script and **nil-check** it — a renamed or missing component returns nil, and the failure
+otherwise surfaces far from its cause:
 ```lua
-local mixer = Component.New("Main Gain")
-mixer["input.1.gain"].Value = -6
-mixer["input.1.mute"].Boolean = true
+-- Global, declared at the top of the script
+Mixer = Component.New("Main Gain")
+
+if Mixer then
+  Mixer["input.1.gain"].Value = -6
+  Mixer["input.1.mute"].Boolean = true
+else
+  print("Error: component 'Main Gain' not found")
+end
 ```
+Never call `Component.New()` inline inside an event handler or function.
 
 ### Notifications (Script-to-Script)
 ```lua
@@ -365,6 +452,45 @@ layout["Volume 1"] = {
 
 ---
 
+## Layout & Visual Requirements
+
+Every plugin layout MUST follow these rules. The `create-plugin` scaffold emits a styled
+example layout; these are the rules that example demonstrates.
+
+1. **Include the build version** in the bottom left of each plugin
+2. **Use a dark background GroupBox** as the plugin canvas (first graphic, lowest ZOrder)
+3. **Group related controls** inside lighter GroupBox sections with descriptive titles
+4. **Use Header graphics** to label major sections
+5. **Use Label graphics** next to every control so users know what each control does
+6. **Ensure text contrast** — light text (`{255,255,255}` or `{221,221,221}`) on dark
+   backgrounds, dark text (`{0,0,0}`) on light backgrounds
+7. **Color buttons meaningfully** — green for connect/enable, red for disconnect/stop,
+   blue for actions, gray for settings
+8. **Use `UnlinkOffColor`** on toggle buttons so on/off states are visually distinct
+   (e.g., green on, dark gray off)
+9. **Set `ButtonVisualStyle = "Flat"`** for a modern, clean look
+10. **Set `CornerRadius`** on buttons (4–8px) and GroupBoxes (8px) for rounded edges
+11. **Use consistent spacing** — align controls on a grid, uniform padding (10px from
+    GroupBox edges, 5px between controls)
+12. **Set `FontSize`** appropriately — 14+ for headers, 11–12 for labels, 10 for small
+    status text
+13. **Use the `Legend` property** on buttons to label them instead of a separate text label
+14. **Use `Icon` on buttons** when applicable — e.g., `Icon = "Power"` for power buttons
+    (set in the control definition, `controls.lua`)
+15. **Status indicators** use LED style with colored on/off states; **size controls
+    appropriately** — buttons at least `{80, 24}`, text fields at least `{150, 24}`,
+    LEDs `{16, 16}`
+
+**Available layout Style values:** `"Fader"`, `"Knob"`, `"Button"`, `"Text"`, `"Meter"`,
+`"Led"`, `"ListBox"`, `"ComboBox"`, `"Media"`, `"None"`
+
+**Available graphic Type values:** `"Label"`, `"GroupBox"`, `"Header"`, `"Image"`, `"Svg"`
+
+**Available fonts:** `"Roboto"` (default), `"Montserrat"`, `"Open Sans"`, `"Lato"`,
+`"Poppins"`, `"Roboto Mono"` (monospace), `"Noto Serif"`, `"Roboto Slab"`
+
+---
+
 ## Control Types Reference
 
 | Type | Required Field | Values |
@@ -383,6 +509,10 @@ These names have special meaning in Q-SYS and enable built-in features when used
 - `IPAddress` — IP address input
 - `Username` / `Password` — credential inputs
 - `MACAddress`, `DeviceName`, `SerialNumber`, `DeviceFirmware` — device info displays
+
+`Port` is **not** reserved — it is the conventional companion name for a connection port
+control, but Q-SYS does not special-case it. Use it for consistency, not for built-in
+behavior.
 
 ---
 
