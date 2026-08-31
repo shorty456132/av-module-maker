@@ -1,0 +1,338 @@
+{
+	"Slider Changed Event": {
+		"prefix": "Extron Event Slider Changed",
+		"body": [
+			"@${1|event,eventEx|}(${2:SliderObject}, 'Changed')",
+			"def ${2}Changed(${3:slider}, ${4:state}, ${5:value}):",
+			"\tprint(${3}.Name, ${4}, ${5})\n\t$0"
+		],
+		"description": "Definition of Slider Changed event handler."
+	},
+	"Event Template": {
+		"prefix": "Extron Event Template",
+		"body": [
+			"@${1|event,eventEx|}(${2:SomeObject}, 'EventName')",
+			"def ${3:HandlerFunction}(${4:actor}, ${5:eventname}):",
+			"\t${6:pass}$0\n"
+		],
+		"description": "Definition of event handler."
+	},
+	"Button Held Event": {
+		"prefix": "Extron Event Button Held",
+		"body": [
+			"@${1|event,eventEx|}(${2:ButtonObject}, 'Held')",
+			"def ${2}Held(${3:button}, ${4:state}):",
+			"\tprint(${3}.Name, ${4})\n\t$0"
+		],
+		"description": "Definition of Button Held event handler."
+	},
+	"Button Pressed Event": {
+		"prefix": "Extron Event Button Pressed",
+		"body": [
+			"@${1|event,eventEx|}(${2:ButtonObject}, 'Pressed')",
+			"def ${2}Pressed(${3:button}, ${4:state}):",
+			"\tprint(${3}.Name, ${4})\n\t$0"
+		],
+		"description": "Definition of Button Pressed event handler."
+	},
+	"Slider Pressed Event": {
+		"prefix": "Extron Event Slider Pressed",
+		"body": [
+			"@${1|event,eventEx|}(${2:SliderObject}, 'Pressed')",
+			"def ${2}Pressed(${3:slider}, ${4:state}, ${5:value}):",
+			"\tprint(${3}.Name, ${4}, ${5})\n\t$0"
+		],
+		"description": "Definition of Slider Pressed event handler."
+	},
+	"Button Released Event": {
+		"prefix": "Extron Event Button Released",
+		"body": [
+			"@${1|event,eventEx|}(${2:ButtonObject}, 'Released')",
+			"def ${2}Released(${3:button}, ${4:state}):",
+			"\tprint(${3}.Name, ${4})\n\t$0"
+		],
+		"description": "Definition of Button Released event handler."
+	},
+	"Slider Released Event": {
+		"prefix": "Extron Event Slider Released",
+		"body": [
+			"@${1|event,eventEx|}(${2:SliderObject}, 'Released')",
+			"def ${2}Released(${3:slider}, ${4:state}, ${5:value}):",
+			"\tprint(${3}.Name, ${4}, ${5})\n\t$0"
+		],
+		"description": "Definition of Slider Released event handler."
+	},
+	"Button Repeated Event": {
+		"prefix": "Extron Event Button Repeated",
+		"body": [
+			"@${1|event,eventEx|}(${2:ButtonObject}, 'Repeated')",
+			"def ${2}Repeated(${3:button}, ${4:state}):",
+			"\tprint(${3}.Name, ${4})\n\t$0"
+		],
+		"description": "Definition of Button Repeated event handler."
+	},
+	"Button Tapped Event": {
+		"prefix": "Extron Event Button Tapped",
+		"body": [
+			"@${1|event,eventEx|}(${2:ButtonObject}, 'Tapped')",
+			"def ${2}Tapped(${3:button}, ${4:state}):",
+			"\tprint(${3}.Name, ${4})\n\t$0"
+		],
+		"description": "Definition of Button Tapped event handler."
+	},
+	"Knob Turned Event": {
+		"prefix": "Extron Event Knob Turned",
+		"body": [
+			"@${1|event,eventEx|}(${2:KnobObject}, 'Turned')",
+			"def ${2}Turned(${3:knob}, ${4:direction}):",
+			"\tprint(${3}.Name, 'Turned', ${4})\n\t$0"
+		],
+		"description": "Definition of Knob Turned event handler."
+	},
+	"StateChanged Event": {
+		"prefix": "Extron Event State Changed",
+		"body": [
+			"@${1|event,eventEx|}(${2:Interface}, 'StateChanged')",
+			"def ${2}Changed(${3:interface}, ${4:state}):",
+			"\tprint(${3}.Port, ${4})\n\t$0"
+		],
+		"description": "Definition of StateChanged event for Contact and IO Interfaces."
+	},
+	"ReceiveData Event": {
+		"prefix": "Extron Event ReceiveData",
+		"body": [
+			"@${1|event,eventEx|}(${2:DataInterfaceObject}, 'ReceiveData')",
+			"def ${3:ReceiveDataEvent}(${4:interface}, ${5:rcvdata}):",
+			"\tprint(${5})\n\t$0"
+		],
+		"description": "Definition of RecieveData event handler for data interface objects."
+	},
+	"Processor Instantiation":{
+		"prefix": "Extron Device Processor",
+		"body":[
+			"${1:ProcessorName} = ProcessorDevice('${2:ProcessorAlias}'$0)"
+		],
+		"description": "Insert Processor Device"
+	},
+	"Touchpanel Instantiation":{
+		"prefix": "Extron Device Touchpanel TLP",
+		"body":[
+			"${1:PanelName} = UIDevice('${2:PanelAlias}'$0)"
+		],
+		"description": "Insert Touchpanel (UIDevice) Device"
+	},
+	"eBUS Device Instantiation":{
+		"prefix": "Extron Device eBUS",
+		"body":[
+			"${1:eBUSName} = eBUSDevice('${2:eBUSAlias}'$0)"
+		],
+		"description": "Insert eBUS Device"
+	},
+	"Port Expansion Adapter Instantiation":{
+		"prefix": "Extron Device Adapter",
+		"body":[
+			"${1:AdapterName} = AdapterDevice('${2:AdapterAlias}'$0)"
+		],
+		"description": "Insert Adapter (TLP Port Expansion) Device"
+	},
+	"Secure Platform Device Instantiation":{
+		"prefix": "Extron Device Secure Platform Device",
+		"body":[
+			"${1:SPDeviceName} = SPDevice('${2:SPDeviceAlias}'$0)"
+		],
+		"description": "Insert Secure Platform Device"
+	},
+	"CircuitBreakerInterface Instantiation":{
+		"prefix": "Extron Interface CircuitBreakerInterface",
+		"body":[
+			"${1:InterfaceName} = CircuitBreakerInterface(${2:ProcessorName}, 'CBR1'$0)"
+		],
+		"description":"Insert CircuitBreakerInterface Instantiation"
+	},
+	"ContactInterface Instantiation":{
+		"prefix": "Extron Interface ContactInterface",
+		"body":[
+			"${1:InterfaceName} = ContactInterface(${2:ProcessorName}, 'CII1'$0)"
+		],
+		"description":"Insert ContactInterface Instantiation"
+	},
+	"DanteInterface Instantiation":{
+		"prefix": "Extron Interface DanteInterface",
+		"body":[
+			"${1:InterfaceName} = DanteInterface('${2:DeviceName'})"
+		],
+		"description":"Insert DanteInterface Instantiation"
+	},
+	"DigitalInputInterface Instantiation":{
+		"prefix": "Extron Interface DigitalInputInterface",
+		"body":[
+			"${1:InterfaceName} = DigitalInputInterface(${2:ProcessorName}, 'DII1'$0)"
+		],
+		"description":"Insert DigitalInputInterface Instantiation"
+	},
+	"DigitalIOInterface Instantiation":{
+		"prefix": "Extron Interface DigitalIOInterface",
+		"body":[
+			"${1:InterfaceName} = DigitalIOInterface(${2:ProcessorName}, 'DIO${3:1}'$0)"
+		],
+		"description":"Insert DigitalIOInterface Instantiation"
+	},
+	"EthernetClientInterface Instantiation":{
+		"prefix": "Extron Interface EthernetClientInterface",
+		"body":[
+			"${1:InterfaceName} = EthernetClientInterface('${2:192.168.254.250}', ${3:23}, Protocol=${4|'TCP','UDP','SSH'|}$0)"
+		],
+		"description":"Insert EthernetClientInterface Instantiation"
+	},
+	"EthernetServerInterfaceEx Instantiation":{
+		"prefix": "Extron Interface EthernetServerInterfaceEx",
+		"body":[
+			"${1:InterfaceName} = EthernetServerInterfaceEx(${2:1024}, Protocol=${4|'TCP','UDP'|}$0)"
+		],
+		"description":"Insert EthernetServerInterfaceEx Instantiation"
+	},
+	"FlexIOInterface Instantiation":{
+		"prefix": "Extron Interface FlexIOInterface",
+		"body":[
+			"${1:InterfaceName} = FlexIOInterface(${2:ProcessorName}, 'FIO${3:1}'$0)"
+		],
+		"description":"Insert FlexIOInterface Instantiation"
+	},
+	"IRInterface Instantiation":{
+		"prefix": "Extron Interface IRInterface",
+		"body":[
+			"${1:IRPortName} = IRInterface(${2:ProcessorName}, 'IRS${3:1}', File='${4:FileName.eir}'$0)"
+		],
+		"description":"Insert IRInterface Instantiation"
+	},
+	"POEInterface Instantiation":{
+		"prefix": "Extron Interface POEInterface",
+		"body":[
+			"${1:InterfaceName} = POEInterface(${2:ProcessorName}, 'POE${3:2}'$0)"
+		],
+		"description":"Insert POEInterface Instantiation"
+	},
+	"RelayInterface Instantiation":{
+		"prefix": "Extron Interface RelayInterface",
+		"body":[
+			"${1:InterfaceName} = RelayInterface(${2:ProcessorName}, 'RLY${3:1}'$0)"
+		],
+		"description":"Insert RelayInterface Instantiation"
+	},
+	"RoomSchedulingInterface Instantiation":{
+		"prefix": "Extron Interface RoomSchedulingInterface",
+		"body":[
+			"${1:InterfaceName} = RoomSchedulingInterface(${2:Hostname}, ('${3:user}', '${4:extron}'))$0"
+		],
+		"description":"Insert RoomSchedulingInterface Instantiation"
+	},
+	"SerialInterface Instantiation":{
+		"prefix": "Extron Interface SerialInterface",
+		"body":[
+			"${1:SerialPortName} = SerialInterface(${2:ProcessorName}, 'COM${3:1}', Baud=${4|9600,38400,57600,115200|}$0)"
+		],
+		"description":"Insert SerialInterface Instantiation"
+	},
+	"SPInterface Instantiation":{
+		"prefix": "Extron Interface SPInterface",
+		"body":[
+			"${1:InterfaceName} = SPInterface('${2:SPDeviceName}'$0)"
+		],
+		"description":"Insert SPInterface Instantiation"
+	},
+	"SWACReceptacleInterface Instantiation":{
+		"prefix": "Extron Interface SWACReceptacleInterface",
+		"body":[
+			"${1:InterfaceName} = SWACReceptacleInterface(${2:ProcessorName}, 'SAC${3:1}'$0)"
+		],
+		"description":"Insert Switched AC Receptacle Interface Instantiation"
+	},
+	"SWPowerInterface Instantiation":{
+		"prefix": "Extron Interface SWPowerInterface",
+		"body":[
+			"${1:InterfaceName} = SWPowerInterface(${2:ProcessorName}, 'SPI${3:1}'$0)"
+		],
+		"description":"Insert SWPowerInterface Instantiation"
+	},
+	"TallyInterface Instantiation":{
+		"prefix": "Extron Interface TallyInterface",
+		"body":[
+			"${1:InterfaceName} = TallyInterface(${2:ProcessorName}, 'TAL1'$0)"
+		],
+		"description":"Insert TallyInterface Instantiation"
+	},
+	"TemperatureInterface Instantiation":{
+		"prefix": "Extron Interface TemperatureInterface",
+		"body":[
+			"${1:InterfaceName} = TemperatureInterface(${2:ProcessorName}, 'TCI1'$0)"
+		],
+		"description":"Insert TemperatureInterface Instantiation"
+	},
+	"VolumeInterface Instantiation":{
+		"prefix": "Extron Interface VolumeInterface",
+		"body":[
+			"${1:InterfaceName} = VolumeInterface(${2:ProcessorName}, 'VOL1'$0)"
+		],
+		"description":"Insert Volume Control Interface Instantiation"
+	},
+	"Define Button":{
+		"prefix": "Extron Button Instantiation",
+		"body":[
+			"${1:ButtonName} = Button(${2:PanelName}, ${3:1}, holdTime=${4:None}, repeatTime=${5:None})\n$0"
+		],
+		"description": "Insert Button Definition"
+	},
+	"Define Button Range":{
+		"prefix": "Extron Button Range Instantiation",
+		"body":[
+			"${1:ButtonListName} = [Button(${2:PanelName}, btnID, holdTime=${4:None}, repeatTime=${5:None}) for btnID in range(${6:10001}, ${7:10011})]\n$0"
+		],
+		"description": "Insert Object List of Buttons by Range"
+	},
+	"Define Knob":{
+		"prefix": "Extron Knob Instantiation",
+		"body":[
+			"${1:KnobName} = Knob(${2:PanelName}, ${3:1})\n$0"
+		],
+		"description": "Insert Knob Definition"
+	},
+	"Define Label":{
+		"prefix": "Extron Label Instantiation",
+		"body":[
+			"${1:LabelName} = Label(${2:PanelName}, ${3:1})\n$0"
+		],
+		"description": "Insert Label Definition"
+	},
+	"Define Level":{
+		"prefix": "Extron Level Instantiation",
+		"body":[
+			"${1:LevelName} = Level(${2:PanelName}, ${3:1})\n$0"
+		],
+		"description": "Insert Level Definition"
+	},
+	"Define Slider":{
+		"prefix": "Extron Slider Instantiation",
+		"body":[
+			"${1:SliderName} = Slider(${2:PanelName}, ${3:1})\n$0"
+		],
+		"description": "Insert Slider Definition"
+	},
+	"Wait Decorator": {
+		"prefix": "Extron WaitDecorator",
+		"body": [
+			"@Wait(${1:1})",
+			"def ${2:WaitHandlerName}():",
+			"\t${3:pass}$0\n"
+		],
+		"description": "Instantiation of a Wait object."
+	},
+	"Timer Decorator": {
+		"prefix": "Extron TimerDecorator",
+		"body": [
+			"@Timer(${1:1})",
+			"def ${2:TimerHandlerName}(timer, count):",
+			"\t${3:pass}$0\n"
+		],
+		"description": "Instantiation of a Timer object."
+	}
+}

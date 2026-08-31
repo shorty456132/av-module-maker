@@ -1,0 +1,22 @@
+{
+    "system": {
+        "name": "${0:PROJECT_NAME}",
+        "code_folder_path": "src",
+        "code_entry_file": "main.py",
+        "layout_folder_path": "layout",
+        "sound_folder_path": "sound",
+        "rfile_folder_path": "rfile",
+        "irfile_folder_path": "ir",
+        "system_id": "${1:SYSTEM_ID}",
+        "author": {
+            "name": "Your Name",
+            "email": "user@yourdomain.com"
+        },
+        "version": "0.0.1",
+        "primary_device_alias": "ProcessorAlias"
+    },
+    "devices": [
+        "${2:P_DEVICE:ProcessorAlias}"
+    ],
+    "schemaVersion": "1.0.0"
+}
