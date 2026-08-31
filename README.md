@@ -20,6 +20,28 @@ The first command registers this repo as a plugin marketplace (Claude Code reads
 You can also run `/plugin` with no arguments to add the marketplace and install from the
 interactive menu. The `/module-maker:*` skill commands run in the terminal CLI.
 
+## Requirements
+
+Installing the plugin needs only Claude Code. **Compiling** the modules the skills
+produce needs the host toolchains below — install only the ones for the platforms you
+target. Software used to *operate* finished modules (the SIMPL Windows GUI, Visual
+Studio) is **not** needed to compile.
+
+**All platforms**
+- **Python 3.13** on `PATH` — the `compile`/`build` scripts under `scripts/` are Python.
+
+**Crestron SIMPL+**
+- **SIMPL+ Cross Compiler (`SPlusCC.exe`)** — install via the **Crestron Master
+  Installer** (Windows). Default path
+  `C:\Program Files (x86)\Crestron\Simpl\SPlusCC.exe`; override with `--compiler=<path>`
+  or the `SPLUSCC` environment variable. The SIMPL Windows GUI is not required.
+
+**Crestron SIMPL# / SIMPL# Pro** (WIP)
+- **.NET SDK** (`dotnet` / MSBuild) — builds the `.clz` / `.cpz` (targets `net47`,
+  4-Series). The `Crestron.SimplSharp.SDK.*` NuGet packages restore automatically via
+  `dotnet` — no separate install. **Visual Studio is not required.**
+- **`SPlusCC.exe`** (as above) — SIMPL# also compiles a `.usp` wrapper.
+
 ## Layout
 
 Skills, reference docs, and scripts are grouped by platform:
