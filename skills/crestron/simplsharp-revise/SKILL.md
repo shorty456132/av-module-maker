@@ -119,3 +119,61 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplsharp_build.py" \
   simply absent).
 - Summarize **every change made** — both halves: the C# fixes and any wrapper re-sync (or
   note explicitly that the public surface was unchanged, so the wrapper needed no edit).
+
+## Ralph Loop Mode (optional — for long or unattended revisions)
+
+For a large audit, or when the user wants the revision to run autonomously, do not
+work every gotcha in one session. Instead **emit a `TODO.md` board** and hand off to
+the raw Ralph loop, which works one card per fresh-context pass. The full contract is
+`${CLAUDE_PLUGIN_ROOT}/reference/RALPH_TODO.md`; the board engine is
+`${CLAUDE_PLUGIN_ROOT}/scripts/ralph/board.py`.
+
+Use this mode when the user asks for a Ralph loop / TODO.md / unattended revision.
+Otherwise revise inline as usual (Steps 1–4 above).
+
+**To emit the board**, translate Steps 1–4 into a **bug-checklist board**: a baseline
+build first, one audit-and-fix card per gotcha class (the `## Step 2 — Audit & fix`
+checklist, #1–8), a conditional wrapper-sync card, and the orchestrator re-verify as
+the final gate. Write `TODO.md` into the module directory **before** touching any
+files. The card list is:
+
+1. `baseline-build` — run the orchestrator **before any edit** to establish a baseline (Step 1); record the current public surface (methods + delegate properties) in the card's notes so later cards know it cold.
+2. `audit-block` — Gotcha #3 (never block the SIMPL+ thread: no `Thread.Sleep`/sync socket read/long loop in a public method; offload to `CTimer`/`CrestronThread`). Depends: `baseline-build`.
+3. `audit-marshal` — Gotcha #2 (`SimplSharpString` for serial, `ushort` for digital/analog at the boundary; no `System.String`). Depends: `baseline-build`.
+4. `audit-feedback` — Gotcha #4 (feedback only through null-guarded delegate properties). Depends: `baseline-build`.
+5. `audit-dispose` — Gotcha #7 (`IDisposable` stops timers/threads, closes sockets, nulls callbacks). Depends: `baseline-build`.
+6. `audit-runtime` — Gotchas #1/#8 (no unsupported desktop `System.*` on `net47` 4-Series; analog scaled to/from `ushort` 0–65535). Depends: `baseline-build`.
+7. `wrapper-sync` — re-sync the wrapper **only if** an audit card added/removed/renamed a public member (Step 3); otherwise a no-op that records "surface unchanged". Depends: the five `audit-*` cards.
+8. **final card `re-verify`** — the orchestrator verify gate (Step 4). Depends: `wrapper-sync`.
+
+Because a loop pass has only `TODO.md` + the files on disk as memory, fold each
+gotcha's rule **into its card's `Spec`** so a cold pass can apply it without reading
+`SIMPLSHARP_CONSTRAINTS.md` (though a card may still consult it). Two constraints are
+load-bearing for the board's correctness:
+
+- **Keep the public surface stable unless a fix requires changing it.** The class's
+  public methods and delegate properties **are** the wrapper's I/O contract (Decision
+  5). Each `audit-*` card's `Spec` must say: fix inside existing members where
+  possible (e.g. offload a blocked call to a `CTimer`) — that needs no wrapper change;
+  only add/remove/rename a member when the fix demands it, and if so, note it for the
+  `wrapper-sync` card.
+- **`wrapper-sync` runs after every audit card** (`Depends:` all five) so it sees the
+  final surface. If unchanged, it records "surface unchanged, wrapper needs no edit"
+  and does nothing; if changed, it re-derives the spec from the **new** class surface
+  and invokes `simplplus-revise` to update the wrapper (`simplplus-revise` owns the
+  SIMPL+ rules; this card only hands it the spec derived from the built class).
+
+The **final card is the verify gate** — its `Verify gate:` header line and the card's
+command are:
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplsharp_build.py" ./<Name>/<Name>/<Name>.csproj ./<Name>/<Name>Wrapper/<Name>Wrapper.usp
+```
+
+A revision is not done until this card exits 0 (or emits the documented
+toolchain-missing fallback — same graceful handling). Then start the loop (from Git
+Bash on Windows):
+
+```
+scripts/ralph/ralph-module-loop.sh ./<Name>/
+```

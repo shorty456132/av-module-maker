@@ -214,3 +214,71 @@ The module is **not done until this exits 0.** Read the step lines it prints:
 
 **Deliverable:** the `.clz` (in `bin/Debug/net47/`) **and** its `<Name>Wrapper.usp`
 (with the staged `.clz` beside it) — the two-part SIMPL# module, proven to build clean.
+
+## Ralph Loop Mode (optional — for long or unattended builds)
+
+For a large module, or when the user wants the build to run autonomously, do not
+write both halves in one session. Instead **emit a `TODO.md` board** and hand off
+to the raw Ralph loop, which builds one card per fresh-context pass. The full
+contract is `${CLAUDE_PLUGIN_ROOT}/reference/RALPH_TODO.md`; the board engine is
+`${CLAUDE_PLUGIN_ROOT}/scripts/ralph/board.py`.
+
+Use this mode when the user asks for a Ralph loop / TODO.md / unattended build.
+Otherwise build inline as usual (Steps 1–5 above).
+
+**To emit the board**, translate Steps 1–5 into one card per stage,
+dependency-ordered, and write `TODO.md` into the module directory **before**
+writing any C# or wrapper files — its shape is defined in the contract doc. The
+card list mirrors the two-half deliverable's strict build order (**wrapper last**,
+after the `.clz` exists — Decision 5):
+
+1. `controller-class` — `<Name>Controller.cs` from Pattern 1 (Step 1).
+2. `csproj` — `<Name>.csproj` (SDK-style, `net47` + `SDK.Library`) (Step 2). Depends: `controller-class`.
+3. `clz-build` — standalone `dotnet build`; confirm `<Name>.clz` on disk (Step 3). Depends: `csproj`.
+4. `wrapper` — derive the signal spec from the built class, invoke `simplplus-create` to emit `<Name>Wrapper.usp` (Step 4). Depends: `clz-build`.
+5. **final card `build`** — the orchestrator verify gate (Step 5). Depends: `wrapper`.
+
+Because a loop pass has only `TODO.md` + the files on disk as memory, fold the
+SIMPL# hard constraints **into the card specs** so a cold pass cannot violate
+them (see `SIMPLSHARP_CONSTRAINTS.md`):
+
+- **`controller-class` card** must state the boundary marshal types (`ushort` for
+  digital/analog, `SimplSharpString` for serial — Gotcha #2), the never-block rule
+  (Gotcha #3), feedback-only-through-delegate-properties (Gotcha #4), the
+  parameterless constructor, and `IDisposable` cleanup (Gotcha #7). Its `Spec` must
+  name the module's public methods and delegate properties, because that surface
+  **is** the contract the `wrapper` card derives from — a cold pass must know it
+  without reading another card.
+- **`csproj` card** must state `net47` + `Crestron.SimplSharp.SDK.Library` +
+  `DebugType portable` — the exact combination that makes the build emit a `.clz`
+  (a plain `Microsoft.NET.Sdk` project that leaves only a `.dll` is the genuine
+  failure the build catches).
+- **`clz-build` card** must state that success is the **`.clz` on disk**, not the
+  MSBuild `-> .dll` line (which never names the `.clz`) — the card verifies by
+  listing for `<Name>/bin/Debug/net47/<Name>.clz`.
+- **`wrapper` card** must state that the spec is derived **mechanically from the
+  built class** (methods → inputs, delegate properties → outputs), that it invokes
+  `simplplus-create` for the SIMPL+ rules + Pattern 2 glue
+  (`#USER_SIMPLSHARP_LIBRARY`, instance decl, one `CHANGE` per input, `CALLBACK
+  FUNCTION` + `RegisterDelegate` per output), and that it must **not** compile the
+  wrapper standalone (the `.clz` isn't staged beside it yet — that's the `build`
+  card's job).
+
+The **`wrapper` card must `Depends: clz-build`** so the loop can never surface the
+wrapper before the `.clz` exists — this is what keeps the wrapper derived from the
+built class instead of re-guessed from prose.
+
+The **final card is the verify gate** — its `Verify gate:` header line and the
+card's command are:
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplsharp_build.py" ./<Name>/<Name>/<Name>.csproj ./<Name>/<Name>Wrapper/<Name>Wrapper.usp
+```
+
+Do any protocol/command discovery **before** emitting the board and fold the
+confirmed commands into the `controller-class` card spec, so each card is
+self-contained. Then start the loop (from Git Bash on Windows):
+
+```
+scripts/ralph/ralph-module-loop.sh ./<Name>/
+```

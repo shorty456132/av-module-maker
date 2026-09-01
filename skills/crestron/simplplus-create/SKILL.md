@@ -59,3 +59,53 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplplus_build.py" <path/to/modu
   tell the user to install it via the Crestron Master Installer (or point
   `--compiler=<path>` / the `SPLUSCC` env var at `SPlusCC.exe`), and hand them the
   compile command above to run themselves.
+
+## Ralph Loop Mode (optional — for long or unattended builds)
+
+For a large module, or when the user wants the build to run autonomously, do not
+write the whole `.usp` in one session. Instead **emit a `TODO.md` board** and
+hand off to the raw Ralph loop, which builds one card per fresh-context pass. The
+full contract is `${CLAUDE_PLUGIN_ROOT}/reference/RALPH_TODO.md`; the board engine
+is `${CLAUDE_PLUGIN_ROOT}/scripts/ralph/board.py`.
+
+Use this mode when the user asks for a Ralph loop / TODO.md / unattended build.
+Otherwise build inline as usual.
+
+**To emit the board**, translate the "Each module must include" list into one
+card per stage, dependency-ordered, and write `TODO.md` into the module directory
+**before writing the `.usp`** — its shape is defined in the contract doc. The card
+list is:
+
+1. `io-structure` → 2. `event-handlers` (Depends: io-structure) → 3. `parameters`
+(Depends: io-structure) → 4. `module-body` (Depends: event-handlers, parameters)
+→ **final card `compile`** (Depends: module-body).
+
+Because a loop pass has only `TODO.md` + the files on disk as memory, fold the
+SIMPL+ hard constraints **into the card specs** so a cold pass cannot violate
+them (see `SIMPLPLUS_CONSTRAINTS.md`):
+
+- **`io-structure` card** must spell out the strict I/O declaration order — all
+  inputs (`DIGITAL_INPUT` → `ANALOG_INPUT` → `STRING_INPUT`), then all outputs,
+  then all `*_PARAMETER`s — **and** the `_SKIP_` alignment rule: prepend N
+  `_SKIP_` entries (N = the module's parameter count) to the first input and
+  first output declaration. So the card's `Spec` must list the parameters by name
+  so the cold pass knows N without reading another card.
+- **`parameters` card** must note `propBounds` **before** `propDefaultValue`, and
+  that connection details (IP/port/credentials) are parameters, not hard-coded.
+- **`event-handlers` card** must note scalars-before-arrays and the required
+  top-of-module directives already being present from `io-structure`.
+
+The **final card is the verify gate** — its `Verify gate:` header line and the
+card's command are:
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplplus_build.py" ./<Module-Dir>/<Module>.usp
+```
+
+Do any protocol/command discovery **before** emitting the board and fold the
+confirmed commands into the `module-body` (and `event-handlers`) card specs, so
+each card is self-contained. Then start the loop (from Git Bash on Windows):
+
+```
+scripts/ralph/ralph-module-loop.sh ./<Module-Dir>/
+```
