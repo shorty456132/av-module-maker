@@ -59,6 +59,7 @@ SIMPLPLUS_BOARD = """\
 
 _Last updated: 2026-09-01_
 _Status: in-progress_
+_Plan: frozen_
 _Loop: ralph (raw bash, fresh context per pass) · Memory: this file + files on disk_
 
 **Module dir:** ./Sony-Projector/
@@ -97,6 +98,13 @@ _Loop: ralph (raw bash, fresh context per pass) · Memory: this file + files on 
 
 ## 🚫 Blocked
 """
+
+
+def test_emit_mode_boards_ship_frozen():
+    # Every board a create/revise skill emits must be frozen: planned complete
+    # up front, so the loop can never grow it (runaway guard). Discovery -> block.
+    for text in (SIMPLPLUS_BOARD, SIMPLSHARP_BOARD, SIMPLSHARP_REVISE_BOARD):
+        assert b.parse(text).plan == "frozen"
 
 
 def test_simplplus_board_parses_into_cards():
@@ -162,6 +170,7 @@ SIMPLSHARP_BOARD = """\
 
 _Last updated: 2026-09-01_
 _Status: in-progress_
+_Plan: frozen_
 _Loop: ralph (raw bash, fresh context per pass) · Memory: this file + files on disk_
 
 **Module dir:** ./Acme/
@@ -268,6 +277,7 @@ SIMPLSHARP_REVISE_BOARD = """\
 
 _Last updated: 2026-09-01_
 _Status: in-progress_
+_Plan: frozen_
 _Loop: ralph (raw bash, fresh context per pass) · Memory: this file + files on disk_
 
 **Module dir:** ./Acme/

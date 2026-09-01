@@ -135,7 +135,9 @@ Otherwise revise inline as usual (Steps 1–4 above).
 build first, one audit-and-fix card per gotcha class (the `## Step 2 — Audit & fix`
 checklist, #1–8), a conditional wrapper-sync card, and the orchestrator re-verify as
 the final gate. Write `TODO.md` into the module directory **before** touching any
-files. The card list is:
+files, with the header line `_Plan: frozen_` and the **complete** card list up
+front: a frozen board cannot grow during the loop (`board.py add` is refused), so a
+cold pass that finds a further defect `block`s (never adds). The card list is:
 
 1. `baseline-build` — run the orchestrator **before any edit** to establish a baseline (Step 1); record the current public surface (methods + delegate properties) in the card's notes so later cards know it cold.
 2. `audit-block` — Gotcha #3 (never block the SIMPL+ thread: no `Thread.Sleep`/sync socket read/long loop in a public method; offload to `CTimer`/`CrestronThread`). Depends: `baseline-build`.

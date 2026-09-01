@@ -26,8 +26,9 @@ CLI (used by the loop prompt):
     python board.py start  <dir> <title>
     python board.py done   <dir> <title>
     python board.py block  <dir> <title> <reason>
-    python board.py add    <dir> <title> [body...]
+    python board.py add    <dir> <title> [body...]  (refused on a frozen board)
     python board.py status <dir>                  -> prints in-progress|done|blocked
+    python board.py remaining <dir>               -> prints count of Next Up + In Progress
 """
 
 from __future__ import annotations
@@ -48,6 +49,7 @@ _HEADER_RE = re.compile(r"^##\s+.*?(" + "|".join(re.escape(s) for s in SECTIONS)
 # Trailing match is horizontal whitespace only ([^\S\n]) so .sub() never eats the
 # line's newline (which would collapse the blank line that follows the front matter).
 _STATUS_RE = re.compile(r"^_Status:[^\S\n]*(?P<val>[a-z-]+)_[^\S\n]*$", re.MULTILINE)
+_PLAN_RE = re.compile(r"^_Plan:[^\S\n]*(?P<val>[a-z]+)_[^\S\n]*$", re.MULTILINE)
 _STAMP_RE = re.compile(r"^_Last updated:[^\S\n]*.*_[^\S\n]*$", re.MULTILINE)
 _DEPENDS_RE = re.compile(r"^\s*-\s*Depends:\s*(?P<val>.+?)\s*$", re.MULTILINE)
 
@@ -69,6 +71,10 @@ class Card:
 @dataclass
 class Board:
     status: str
+    # plan is the runaway guard: `frozen` boards are emitted complete up front
+    # and reject `add()` (discovery must `block`, not grow the board). `open`
+    # (the default when no `_Plan:` line is present) preserves the old behavior.
+    plan: str = "open"
     sections: dict = field(default_factory=dict)
 
     def section(self, name: str) -> List[Card]:
@@ -81,6 +87,8 @@ def parse(text: str) -> Board:
     """Parse TODO.md markdown into a Board of sections -> [Card]."""
     status_m = _STATUS_RE.search(text)
     status = status_m.group("val") if status_m else "in-progress"
+    plan_m = _PLAN_RE.search(text)
+    plan = plan_m.group("val") if plan_m else "open"
 
     sections: dict = {name: [] for name in SECTIONS}
     current: Optional[str] = None
@@ -122,7 +130,7 @@ def parse(text: str) -> Board:
     for cards in sections.values():
         for c in cards:
             c.raw = c.raw.rstrip()
-    return Board(status=status, sections=sections)
+    return Board(status=status, plan=plan, sections=sections)
 
 
 # --- selection ------------------------------------------------------------
@@ -147,6 +155,14 @@ def derive_status(board: Board) -> str:
     if not board.section("Next Up") and not board.section("In Progress"):
         return "done"
     return "in-progress"
+
+
+def remaining(board: Board) -> int:
+    """Count of cards still to finish (Next Up + In Progress). The loop's
+    convergence guard greps this each pass: it only drops when a card reaches
+    Done — i.e. real forward progress — so a run of non-decreasing values means
+    the loop is spinning without completing anything."""
+    return len(board.section("Next Up")) + len(board.section("In Progress"))
 
 
 # --- rendering ------------------------------------------------------------
@@ -254,6 +270,12 @@ def block(text: str, title: str, reason: str, today: Optional[str] = None) -> st
 def add(text: str, title: str, body_lines: Optional[List[str]] = None,
         today: Optional[str] = None) -> str:
     board = parse(text)
+    if board.plan == "frozen":
+        raise ValueError(
+            "plan is frozen — new work must be blocked, not added. Emit the full "
+            "plan up front; if a cold pass finds unforeseen work, `block` the card "
+            "so a human can amend the board and resume."
+        )
     raw = f"- [ ] **{title}**"
     if body_lines:
         raw += "\n" + "\n".join(
@@ -293,6 +315,9 @@ def main(argv: List[str]) -> int:
     if cmd == "status":
         print(parse(_read(rest[0])).status)
         return 0
+    if cmd == "remaining":
+        print(remaining(parse(_read(rest[0]))))
+        return 0
     if cmd == "start":
         _write(rest[0], start(_read(rest[0]), rest[1]))
         return 0
@@ -303,7 +328,11 @@ def main(argv: List[str]) -> int:
         _write(rest[0], block(_read(rest[0]), rest[1], " ".join(rest[2:])))
         return 0
     if cmd == "add":
-        _write(rest[0], add(_read(rest[0]), rest[1], list(rest[2:])))
+        try:
+            _write(rest[0], add(_read(rest[0]), rest[1], list(rest[2:])))
+        except ValueError as e:
+            print(f"add refused: {e}", file=sys.stderr)
+            return 3
         return 0
     print(f"unknown command: {cmd}", file=sys.stderr)
     return 2

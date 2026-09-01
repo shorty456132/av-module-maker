@@ -213,3 +213,41 @@ def test_transitions_update_last_updated_stamp():
     out = b.start(FRESH, "info.lua", today="2026-09-02")
     assert "_Last updated: 2026-09-02_" in out
     assert "_Last updated: 2026-09-01_" not in out
+
+
+# --- plan freeze (runaway guard) ------------------------------------------
+#
+# A frozen board is emitted complete up front and MUST NOT grow during the loop:
+# discovery becomes a `block` (halts for a human), never a silent `add`. This is
+# the engine half of the runaway-loop guard — enforced here, not just in prose.
+
+FROZEN = FRESH.replace("_Status: in-progress_", "_Status: in-progress_\n_Plan: frozen_")
+
+
+def test_parse_plan_defaults_open():
+    # A board with no _Plan: line is `open` (backward-compatible default).
+    assert b.parse(FRESH).plan == "open"
+
+
+def test_parse_reads_plan_frozen():
+    assert b.parse(FROZEN).plan == "frozen"
+
+
+def test_add_allowed_when_plan_open():
+    out = b.add(FRESH, "extra.lua", ["  - Spec: something new."])
+    assert "extra.lua" in [c.title for c in b.parse(out).section("Next Up")]
+
+
+def test_add_refused_when_plan_frozen():
+    with pytest.raises(ValueError):
+        b.add(FROZEN, "extra.lua", ["  - Spec: sneaking a card in."])
+    # And nothing about the board was mutated on the refused call.
+    assert "extra.lua" not in FROZEN
+
+
+# --- remaining (convergence-guard signal) ---------------------------------
+
+def test_remaining_counts_next_up_and_in_progress():
+    assert b.remaining(b.parse(FRESH)) == 2         # 2 Next Up, 0 In Progress
+    assert b.remaining(b.parse(RESUMABLE)) == 2     # 1 Next Up, 1 In Progress
+    assert b.remaining(b.parse(DRAINED)) == 0       # drained

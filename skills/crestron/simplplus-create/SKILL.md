@@ -73,8 +73,11 @@ Otherwise build inline as usual.
 
 **To emit the board**, translate the "Each module must include" list into one
 card per stage, dependency-ordered, and write `TODO.md` into the module directory
-**before writing the `.usp`** — its shape is defined in the contract doc. The card
-list is:
+**before writing the `.usp`** — its shape is defined in the contract doc. Emit the
+header line `_Plan: frozen_` and the **complete** card list up front: a frozen
+board cannot grow during the loop (`board.py add` is refused), so do all discovery
+now and let a later cold pass `block` (never add) if it finds missing work. The
+card list is:
 
 1. `io-structure` → 2. `event-handlers` (Depends: io-structure) → 3. `parameters`
 (Depends: io-structure) → 4. `module-body` (Depends: event-handlers, parameters)

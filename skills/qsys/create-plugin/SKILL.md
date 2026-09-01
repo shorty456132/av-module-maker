@@ -581,6 +581,10 @@ Otherwise build inline as usual.
 **To emit the board**, translate the Creation Order above into one card per file,
 in the same dependency order, and write `TODO.md` into the plugin directory
 **before writing any `.lua` files** — its shape is defined in the contract doc.
+Emit the header line `_Plan: frozen_` and the **complete** card list up front: a
+frozen board cannot grow during the loop (`board.py add` is refused), so the loop
+converges instead of an eager pass endlessly appending "improvements". Do all
+discovery now; a cold pass that later finds missing work `block`s rather than adds.
 The card list mirrors the Creation Order:
 
 1. `info.lua` → 2. `properties.lua` → 3. `controls.lua` (Depends: properties.lua)

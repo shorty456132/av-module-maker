@@ -228,7 +228,10 @@ Otherwise build inline as usual (Steps 1–5 above).
 
 **To emit the board**, translate Steps 1–5 into one card per stage,
 dependency-ordered, and write `TODO.md` into the module directory **before**
-writing any C# or wrapper files — its shape is defined in the contract doc. The
+writing any C# or wrapper files — its shape is defined in the contract doc. Emit
+the header line `_Plan: frozen_` and the **complete** card list up front: a frozen
+board cannot grow during the loop (`board.py add` is refused), so do all discovery
+now and let a later cold pass `block` (never add) if it finds missing work. The
 card list mirrors the two-half deliverable's strict build order (**wrapper last**,
 after the `.clz` exists — Decision 5):
 

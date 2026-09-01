@@ -22,6 +22,14 @@ set -uo pipefail
 MODULE_DIR="${1:?usage: ralph-module-loop.sh <module-dir> [max-passes]}"
 MAX="${2:-40}"
 
+# Convergence guard: halt if the count of unfinished cards fails to drop for this
+# many passes running. `remaining` only drops when a card reaches Done (real
+# forward progress), so a stall means the loop is spinning — e.g. a verify gate
+# that never passes. This bounds wasted `claude -p` calls far below MAX; combined
+# with a frozen board (which can't grow) and the MAX ceiling, it's the middle of
+# three brakes. Override with the STALL_MAX env var.
+STALL_MAX="${STALL_MAX:-2}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPT="$SCRIPT_DIR/module-loop-prompt.md"
 BOARD="$SCRIPT_DIR/board.py"
@@ -36,7 +44,13 @@ board_status() {
   python "$BOARD" status "$MODULE_DIR" 2>/dev/null | tr -d '[:space:]'
 }
 
+board_remaining() {
+  python "$BOARD" remaining "$MODULE_DIR" 2>/dev/null | tr -d '[:space:]'
+}
+
 pass=0
+stall=0
+prev_remaining="$(board_remaining)"
 while (( pass < MAX )); do
   pass=$((pass + 1))
   echo "──────────── Ralph pass $pass / $MAX ────────────"
@@ -51,6 +65,22 @@ while (( pass < MAX )); do
     done)    echo "✓ Module complete in $pass pass(es)."; exit 0 ;;
     blocked) echo "✗ Blocked — see the 🚫 Blocked section of $TODO."; exit 3 ;;
   esac
+
+  # Convergence check: did this pass finish a card? If the unfinished count did
+  # not drop, count a stall; a run of STALL_MAX stalls means we're not making
+  # progress, so stop rather than burn the rest of the pass budget.
+  rem="$(board_remaining)"
+  if [[ -n "$rem" && -n "$prev_remaining" && "$rem" -lt "$prev_remaining" ]]; then
+    stall=0
+  else
+    stall=$((stall + 1))
+  fi
+  echo "   remaining cards: ${rem:-unknown} (stall ${stall}/${STALL_MAX})"
+  prev_remaining="$rem"
+  if (( stall >= STALL_MAX )); then
+    echo "⚠ Not converging — remaining cards did not drop for $STALL_MAX passes. Inspect $TODO." >&2
+    exit 4
+  fi
 done
 
 echo "⚠ Hit max passes ($MAX) without draining the board. Inspect $TODO." >&2

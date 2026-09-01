@@ -32,14 +32,15 @@ Do EXACTLY ONE card this pass, then stop. Never advance two cards. Steps:
    - If the card IS the verify gate, run its command (the `Verify gate:` line in
      the board header) and read the result.
 
-5. Check the card's `Verify`. On success:
-   - `python $BOARD done $DIR "<title>"`.
-   - If you discovered genuinely new, necessary work, add it:
-     `python $BOARD add $DIR "<new title>" "  - Spec: ..." "  - Depends: ..."`.
+5. Check the card's `Verify`. On success: `python $BOARD done $DIR "<title>"`.
 
 6. If you are genuinely stuck — an unmet dependency, an ambiguous spec you must
    not guess at, or the verify failed twice — run
    `python $BOARD block $DIR "<title>" "<one-line reason>"` and stop.
+   - **The board is frozen: never add cards.** If you discover genuinely new,
+     necessary work that isn't on the board, `block` the current card with reason
+     `needs-new-card: <what's missing>` and stop. A human will amend the plan and
+     resume the loop. (`board.py add` is refused on a frozen board by design.)
 
 7. Stop. Do not start another card. The loop will invoke a fresh pass.
 
@@ -49,3 +50,5 @@ Rules:
 - Never invent device protocol details or platform API behavior; if the Spec
   lacks something you cannot safely default, `block` the card rather than guess.
 - Do not edit the board's section structure by hand — only via `board.py`.
+- Only `start` / `done` / `block` this pass. Never `add` — the plan is frozen;
+  missing work is a `block`, not a new card.
