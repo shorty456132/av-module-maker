@@ -567,6 +567,47 @@ Follow this order to ensure dependencies are satisfied:
 9. **components.lua**, **pins.lua**, **wiring.lua**, **rectify_properties.lua** — Supporting files as needed
 10. **README.md** — Plugin documentation
 
+## Ralph Loop Mode (optional — for long or unattended builds)
+
+For large plugins, or when the user wants the build to run autonomously, do not
+write every file in one session. Instead **emit a `TODO.md` board** and hand off
+to the raw Ralph loop, which builds one card per fresh-context pass. The full
+contract is `${CLAUDE_PLUGIN_ROOT}/reference/RALPH_TODO.md`; the board engine is
+`${CLAUDE_PLUGIN_ROOT}/scripts/ralph/board.py`.
+
+Use this mode when the user asks for a Ralph loop / TODO.md / unattended build.
+Otherwise build inline as usual.
+
+**To emit the board**, translate the Creation Order above into one card per file,
+in the same dependency order, and write `TODO.md` into the plugin directory
+**before writing any `.lua` files** — its shape is defined in the contract doc.
+The card list mirrors the Creation Order:
+
+1. `info.lua` → 2. `properties.lua` → 3. `controls.lua` (Depends: properties.lua)
+→ 4. `pages.lua` → 5. `layout.lua` (Depends: controls.lua) → 6. `runtime.lua`
+(Depends: controls.lua, properties.lua) → 7. `model.lua` → 8. `plugin.lua`
+(Depends: all includes) → 9. `components.lua`/`pins.lua`/`wiring.lua`/
+`rectify_properties.lua` as needed → 10. `README.md` → **final card `compile`**.
+
+The **final card is the verify gate** — its `Verify gate:` header line and the
+card's command are:
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" ./<Plugin-Dir>/
+```
+
+Do protocol discovery (if the plugin talks to a device) and confirm the command
+set with the user **before** emitting the board, so each card's `Spec` is
+self-contained — a loop pass has only `TODO.md` + files on disk as memory and
+must not guess protocol details. Fold the confirmed commands into the
+`controls.lua` / `runtime.lua` card specs.
+
+Then start the loop (from Git Bash on Windows):
+
+```
+scripts/ralph/ralph-module-loop.sh ./<Plugin-Dir>/
+```
+
 ## Consistency Checklist
 
 Before finishing, verify:

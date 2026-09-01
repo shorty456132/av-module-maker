@@ -81,6 +81,28 @@ material is redistributed.
 **Crestron SIMPL# / SIMPL# Pro** (WIP — stubs scaffolded): `simplsharp-create` /
 `simplsharp-revise`, `simplsharp-pro-create` / `simplsharp-pro-revise`.
 
+## Ralph loop (unattended module builds)
+
+For large or overnight builds, a create skill can emit a `TODO.md` kanban board
+into the module directory and hand off to a **raw Ralph loop** —
+`scripts/ralph/ralph-module-loop.sh`, which re-runs `claude -p` with a fixed
+prompt so **every pass gets a fresh context window**. The board (`📋 Next Up /
+🔄 In Progress / ✅ Done / 🚫 Blocked`) plus the files on disk are the loop's only
+memory (no git); it advances one card per pass and stops when the board's
+`_Status:` line reads `done` or `blocked`. Ask for a "Ralph loop" or "TODO.md
+build" to use it.
+
+```
+# from Git Bash on Windows:
+scripts/ralph/ralph-module-loop.sh ./My-Plugin/
+```
+
+The board format and per-pass protocol are specified in
+`reference/RALPH_TODO.md`; the deterministic board engine is
+`scripts/ralph/board.py` (unit-tested under `scripts/ralph/tests/`). This is
+distinct from the `/ralph-loop` plugin, which keeps a single accumulating
+session rather than fresh context per pass.
+
 ## Roadmap
 
 - **Now**: Q-SYS plugin creation, compilation, and revision; Crestron SIMPL+ module
