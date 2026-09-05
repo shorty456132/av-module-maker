@@ -12,6 +12,9 @@ Run the plugin compiler to resolve all `--[[ #include ]]` directives and produce
 
 If `$ARGUMENTS` is empty, ask the user which plugin directory to compile.
 
+Compiling only bumps the version. Leave `PluginInfo.Author` untouched — see
+`${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
+
 ## Version Bump
 
 Before compiling, read the `info.lua` file in the target directory to find the current version (the `Version` field in `PluginInfo`). The version follows semantic format: `Major.Minor.Fix.Development`.

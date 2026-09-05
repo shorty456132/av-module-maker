@@ -14,6 +14,9 @@ revision changes the class's public surface, the wrapper must be re-synced to ma
 orchestrator, exit 0.
 
 ## Before revising
+- **Do not touch authorship.** Leave any existing `<Authors>`/`<Company>`/namespace value
+  exactly as written, and never add one — no name inferred from `git config` or session
+  identity. See `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
 - Confirm this is a **SIMPL#** job (`.clz` + `.usp` wrapper), not SIMPL# Pro (`.cpz`):
   `${CLAUDE_PLUGIN_ROOT}/reference/crestron/SIMPLSHARP_OVERVIEW.md`.
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp/SIMPLSHARP_CONSTRAINTS.md`

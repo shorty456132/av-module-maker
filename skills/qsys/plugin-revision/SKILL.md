@@ -87,6 +87,10 @@ Check for these common issues:
 
 ### Plugin Metadata
 - [ ] `PluginInfo` has all required fields (Name, Version, BuildVersion, Id, Author, Description)
+- [ ] `Author` holds a real value. If it is already populated, **leave it exactly as-is** —
+      never overwrite it or re-ask. If it is missing or still a placeholder (`Author Name`,
+      `<author>`, empty), ask per `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
+      Never infer it from `git config` or session identity.
 - [ ] Version format is `Major.Minor.Fix.Development` (4-part semantic)
 
 ## Step 3: Make Changes

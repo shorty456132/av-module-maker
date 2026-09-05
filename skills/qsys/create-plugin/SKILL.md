@@ -29,10 +29,24 @@ Checklist before finishing:
 - **Every layout follows the Visual Requirements** — see `QSYS_PATTERNS.md` → *Layout &
   Visual Requirements* (build version shown, dark-bg GroupBox, a label per control,
   contrast, meaningful button colors, `UnlinkOffColor` on toggles).
+- **Never infer the plugin author** — ask, and store nothing. See
+  `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
 
 ## Output Directory
 
 Before creating any files, ask the user where they want the plugin files placed. Suggest a default directory name based on the plugin name (e.g., `./My-Plugin/`). Create the directory if it doesn't exist, then write all `.lua` files into it.
+
+## Author Attribution
+
+`info.lua` and the `plugin.lua` header both carry an author byline. **Never** derive it
+from `git config`, the session user's name or email, this plugin's own
+`.claude-plugin/plugin.json`, or any other ambient source.
+
+Ask once with `AskUserQuestion` — offer **Unspecified** (the recommended default, written
+literally) or letting the user enter a name — and use that one answer for every author
+field in the plugin. Do not save the answer anywhere; a later run asks again.
+
+Full rules: `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
 
 ## Q-SYS Reference Documentation
 
@@ -199,7 +213,7 @@ Use this exact structure for `plugin.lua`:
 
 ```lua
 -- Plugin Name
--- by Author Name
+-- by <author>          -- from the Author Attribution ask; never inferred
 -- Date
 
 -- Information block for the plugin
@@ -297,7 +311,7 @@ PluginInfo = {
   Version = "1.0.0",
   BuildVersion = "1.0.0.0",
   Id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890",  -- unique random GUID per plugin
-  Author = "Author Name",
+  Author = "<author>",  -- ask the user; never infer from git or session identity
   Description = "Description of what the plugin does"
 }
 ```
