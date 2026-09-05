@@ -14,6 +14,11 @@ argument-hint: module description
   with the Crestron SIMPL+ toolchain installed — see **Compile & verify** below.
 
 ## Before writing code
+- **No author byline.** A `.usp` has no author field and none is to be added — do not
+  write a `Programmer:` / `Written by:` header comment, and never put a name inferred
+  from `git config` or session identity anywhere in the module. Add a byline only if the
+  user explicitly asks, using the name they give. See
+  `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/SIMPLPLUS_CONSTRAINTS.md` — the
   **SIMPL+ Gotchas** section lists hard compile-error rules (scalars before
   arrays, required top-of-module directives, I/O declared in strict type order

@@ -23,6 +23,11 @@ the class instead of being re-designed from prose.
   `.clz` → compile the wrapper. See `${CLAUDE_PLUGIN_ROOT}/reference/crestron/SIMPLSHARP_COMPILATION.md`.
 
 ## Before writing code
+- **No author metadata.** Do not add `<Authors>`, `<Company>`, or `<Copyright>` to the
+  `.csproj`, do not put a name in a file-header comment, and keep the `MyCompany.*`
+  namespace placeholder unless the user supplies a real one. Never infer any of these
+  from `git config` or session identity. See
+  `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
 - Confirm this is a **SIMPL#** job (`.clz` + `.usp` wrapper), not SIMPL# Pro (`.cpz`):
   `${CLAUDE_PLUGIN_ROOT}/reference/crestron/SIMPLSHARP_OVERVIEW.md`.
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplsharp/SIMPLSHARP_CONSTRAINTS.md` —

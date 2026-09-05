@@ -7,6 +7,9 @@ argument-hint: module file or directory path
 # Revise Crestron SIMPL+ Module
 
 ## Before revising
+- **Do not touch authorship.** Leave any existing byline exactly as written, and never add
+  one — no `Programmer:` header, no name inferred from `git config` or session identity.
+  See `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
 - Read `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/SIMPLPLUS_CONSTRAINTS.md` and
   `${CLAUDE_PLUGIN_ROOT}/reference/crestron/simplplus/SIMPLPLUS_PATTERNS.md`. The
   **SIMPL+ Gotchas** section lists hard compile-error rules (scalars before
