@@ -10,7 +10,9 @@ are load-bearing: exactly one card advances per pass, and _Status: only reaches
 `done` when Next Up and In Progress are both empty.
 """
 
+import json
 import os
+import shlex
 import sys
 
 import pytest
@@ -251,3 +253,104 @@ def test_remaining_counts_next_up_and_in_progress():
     assert b.remaining(b.parse(FRESH)) == 2         # 2 Next Up, 0 In Progress
     assert b.remaining(b.parse(RESUMABLE)) == 2     # 1 Next Up, 1 In Progress
     assert b.remaining(b.parse(DRAINED)) == 0       # drained
+
+
+# --- summarize (P5 observability contract) --------------------------------
+#
+# `summarize()` is the single dict every observer reads: the loop's status
+# writer, `status.py show`, and P6's acceptance measurement. It must reuse the
+# same parser/pick/remaining the loop itself uses — one board parser, not two —
+# so a watcher can never disagree with the engine about what card is current.
+
+BLOCKED = """\
+# TODO — Sample Plugin (qsys)
+
+_Last updated: 2026-09-01_
+_Status: blocked_
+
+## 📋 Next Up
+- [ ] **compile** — Run the verify gate.
+  - Depends: controls.lua
+
+## 🔄 In Progress
+
+## ✅ Done
+- [x] **info.lua** — PluginInfo table.
+
+## 🚫 Blocked
+- [ ] **controls.lua** — Define all controls.
+  - Blocked: needs-new-card: no channel map in the spec
+"""
+
+
+def test_summarize_fresh_board_reports_first_card_current():
+    s = b.summarize(b.parse(FRESH))
+    assert s["status"] == "in-progress"
+    assert s["plan"] == "open"
+    assert s["current"] == "info.lua"
+    assert (s["done"], s["remaining"], s["total"]) == (0, 2, 2)
+    assert s["blocked"] == []
+
+
+def test_summarize_in_progress_board_reports_the_resumed_card():
+    s = b.summarize(b.parse(RESUMABLE))
+    # `current` is whatever the *engine* would pick, so a watcher and the loop
+    # can never name different cards.
+    assert s["current"] == "info.lua" == b.pick(b.parse(RESUMABLE))
+    assert (s["done"], s["remaining"], s["total"]) == (0, 2, 2)
+
+
+def test_summarize_blocked_board_parses_the_reason():
+    s = b.summarize(b.parse(BLOCKED))
+    assert s["status"] == "blocked"
+    assert s["blocked"] == [
+        {"title": "controls.lua", "reason": "needs-new-card: no channel map in the spec"}
+    ]
+    # The dependent card is unreachable, so nothing is current.
+    assert s["current"] is None
+    assert (s["done"], s["total"]) == (1, 3)
+
+
+def test_summarize_drained_board_reports_done_and_no_current():
+    text = b.done(b.start(RESUMABLE, "info.lua"), "info.lua")
+    text = b.done(b.start(text, "controls.lua"), "controls.lua")
+    s = b.summarize(b.parse(text))
+    assert s["status"] == "done"
+    assert s["current"] is None
+    assert (s["done"], s["remaining"], s["total"]) == (2, 0, 2)
+
+
+def test_card_blocked_reason_is_none_when_absent():
+    assert b.parse(FRESH).section("Next Up")[0].blocked_reason is None
+
+
+def test_summary_cli_prints_parseable_json(tmp_path, capsys):
+    (tmp_path / "TODO.md").write_text(BLOCKED, encoding="utf-8")
+    assert b.main(["summary", str(tmp_path)]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "blocked"
+    assert payload["current"] is None
+    assert payload["blocked"][0]["title"] == "controls.lua"
+
+
+def test_summary_shell_emits_eval_safe_assignments(tmp_path, capsys):
+    # The loop `eval`s this to get every board fact in one engine call per pass.
+    # Titles are author-written text, so values must survive quoting intact.
+    text = FRESH.replace("**info.lua**", "**info.lua (it's odd)**")
+    (tmp_path / "TODO.md").write_text(text, encoding="utf-8")
+    assert b.main(["summary", str(tmp_path), "--shell"]) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    env = dict(ln.split("=", 1) for ln in lines)
+    assert env["B_DONE"] == "0" and env["B_TOTAL"] == "2"
+    assert env["B_STATUS"] == "in-progress"
+    assert env["B_BLOCKED"] == "0"
+    # Round-trips through shell quoting intact — that is what makes `eval` safe.
+    assert shlex.split(env["B_CURRENT"]) == ["info.lua (it's odd)"]
+
+
+def test_summary_shell_leaves_current_empty_when_nothing_is_eligible(tmp_path, capsys):
+    (tmp_path / "TODO.md").write_text(BLOCKED, encoding="utf-8")
+    b.main(["summary", str(tmp_path), "--shell"])
+    env = dict(ln.split("=", 1) for ln in capsys.readouterr().out.strip().splitlines())
+    assert env["B_CURRENT"] in ("''", '""', "")
+    assert env["B_BLOCKED"] == "1"

@@ -29,13 +29,16 @@ CLI (used by the loop prompt):
     python board.py add    <dir> <title> [body...]  (refused on a frozen board)
     python board.py status <dir>                  -> prints in-progress|done|blocked
     python board.py remaining <dir>               -> prints count of Next Up + In Progress
+    python board.py summary <dir> [--shell]       -> run summary as JSON (or B_* shell vars)
 """
 
 from __future__ import annotations
 
 import datetime
+import json
 import os
 import re
+import shlex
 import sys
 from dataclasses import dataclass, field
 from typing import List, Optional
@@ -52,6 +55,7 @@ _STATUS_RE = re.compile(r"^_Status:[^\S\n]*(?P<val>[a-z-]+)_[^\S\n]*$", re.MULTI
 _PLAN_RE = re.compile(r"^_Plan:[^\S\n]*(?P<val>[a-z]+)_[^\S\n]*$", re.MULTILINE)
 _STAMP_RE = re.compile(r"^_Last updated:[^\S\n]*.*_[^\S\n]*$", re.MULTILINE)
 _DEPENDS_RE = re.compile(r"^\s*-\s*Depends:\s*(?P<val>.+?)\s*$", re.MULTILINE)
+_BLOCKED_RE = re.compile(r"^\s*-\s*Blocked:\s*(?P<val>.+?)\s*$", re.MULTILINE)
 
 
 @dataclass
@@ -66,6 +70,14 @@ class Card:
         if not m:
             return []
         return [d.strip() for d in m.group("val").split(",") if d.strip()]
+
+    @property
+    def blocked_reason(self) -> Optional[str]:
+        """The `- Blocked: <reason>` line block() appended, or None. Mirrors
+        `depends` so observers read the reason through the same parser the
+        engine writes it with."""
+        m = _BLOCKED_RE.search(self.raw)
+        return m.group("val").strip() if m else None
 
 
 @dataclass
@@ -163,6 +175,29 @@ def remaining(board: Board) -> int:
     Done — i.e. real forward progress — so a run of non-decreasing values means
     the loop is spinning without completing anything."""
     return len(board.section("Next Up")) + len(board.section("In Progress"))
+
+
+def summarize(board: Board) -> dict:
+    """One dict describing the whole run, for anything watching the loop.
+
+    Deliberately built out of `pick()` / `remaining()` / the parsed sections —
+    the *same* calls the loop makes — so a watcher can never disagree with the
+    engine about which card is current or whether the board is drained. This is
+    the schema `status.py` embeds and P6's measurement reads.
+    """
+    counts = {name: len(board.section(name)) for name in SECTIONS}
+    return {
+        "status": board.status,
+        "plan": board.plan,
+        "remaining": remaining(board),
+        "done": counts["Done"],
+        "total": sum(counts.values()),
+        "current": pick(board),
+        "blocked": [
+            {"title": c.title, "reason": c.blocked_reason or ""}
+            for c in board.section("Blocked")
+        ],
+    }
 
 
 # --- rendering ------------------------------------------------------------
@@ -317,6 +352,21 @@ def main(argv: List[str]) -> int:
         return 0
     if cmd == "remaining":
         print(remaining(parse(_read(rest[0]))))
+        return 0
+    if cmd == "summary":
+        data = summarize(parse(_read(rest[0])))
+        if "--shell" in rest[1:]:
+            # One engine call per pass: the loop `eval`s these. Values are
+            # shell-quoted because card titles are free text.
+            for key, value in (
+                ("B_STATUS", data["status"]), ("B_PLAN", data["plan"]),
+                ("B_REMAINING", data["remaining"]), ("B_DONE", data["done"]),
+                ("B_TOTAL", data["total"]), ("B_CURRENT", data["current"] or ""),
+                ("B_BLOCKED", len(data["blocked"])),
+            ):
+                print(f"{key}={shlex.quote(str(value))}")
+            return 0
+        print(json.dumps(data, indent=2))
         return 0
     if cmd == "start":
         _write(rest[0], start(_read(rest[0]), rest[1]))

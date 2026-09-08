@@ -89,6 +89,7 @@ Never hand-edit the section moves; call the engine so transitions are exact.
 | `python board.py add <dir> <title> [body…]` | Append a card to Next Up. **Refused (non-zero) on a `frozen` board** — the loop never calls it; discovery `block`s instead. |
 | `python board.py status <dir>` | Print `in-progress` \| `done` \| `blocked`. |
 | `python board.py remaining <dir>` | Print the count of unfinished cards (Next Up + In Progress). The loop's convergence guard greps this. |
+| `python board.py summary <dir> [--shell]` | Print the whole run summary — `{status, plan, remaining, done, total, current, blocked[]}` — as JSON, or as shell-quoted `B_*` assignments the loop `eval`s once per pass. |
 
 The model authors card **content** (titles, specs, follow-ups) and does the
 actual file work; the engine owns the **markdown surgery** and the status line.
@@ -113,6 +114,60 @@ When `board.py status` reports `done`, the loop stops and prints `RALPH-DONE`.
 The loop also stops early if the board `_Status:` is `blocked`, or if the
 convergence guard sees the unfinished-card count fail to drop for two passes
 running (a spinning loop) — both halt for a human rather than burn the pass budget.
+
+## Watching a run — `.ralph/`
+
+A raw loop is opaque by construction: every pass is a fresh process, so there is
+no session to attach to and nothing accumulates in memory. Each run therefore
+keeps its state on disk beside the board, in a git-ignored `.ralph/` directory in
+the module dir:
+
+| Path | What it is |
+|---|---|
+| `.ralph/status.json` | Schema-v1 run state: pass, current card, cumulative tokens + cost, PIDs, timestamps, and `board` — `board.py summary`'s dict verbatim. |
+| `.ralph/run.log` | Everything the loop printed, for a run you were not watching. |
+| `.ralph/logs/pass-NN.jsonl` | The raw `stream-json` for pass *N*, for forensics. |
+| `.ralph/REPORT.md` | Written on **every** terminal path — outcome, cards, elapsed, spend. |
+| `.ralph/STOP` | Create it (`touch`) to halt the run cleanly, between passes or mid-pass. |
+
+Read it with `python scripts/ralph/status.py show <dir>` (works while the run is
+live and after it ends) or `report <dir>` to regenerate `REPORT.md`.
+
+`status.json` embeds `board.py summary` rather than re-parsing `TODO.md`, so a
+watcher can never disagree with the engine about which card is current. Writes
+merge: `key=value` sets, `+key=value` accumulates (that is how one pass's usage
+becomes the run total), and `started_at` / `pid` survive every later write.
+
+### Per-pass narration
+
+`claude -p` buffers its whole output when no `--output-format` is given, which is
+what made a pass a multi-minute silence. The loop instead runs
+`--output-format stream-json --verbose` piped through
+`scripts/ralph/render_pass.py`, which prints one timestamped line per tool call
+and per tool error as they happen, then a final line carrying the pass's turns,
+duration, cost, and tokens — the API's own accounting, taken from the `result`
+event. The renderer never raises: an unparseable line or an unknown event type
+renders nothing, because a traceback there would break the pipe mid-run.
+
+### Exit codes
+
+The loop's contract with whatever launched it (mirrored in
+`status.py`'s `EXIT_MEANING`, which is what `REPORT.md` prints in words):
+
+| Code | Meaning |
+|---|---|
+| 0 | Done — the board drained and the verify gate passed. |
+| 1 | Hit `MAX` passes (or `RUN_BUDGET_USD`) without draining. |
+| 2 | No `TODO.md` — the create/build skill has not emitted a board. |
+| 3 | Blocked — a card needs a human. |
+| 4 | Not converging — unfinished count did not drop for `STALL_MAX` passes. |
+| 5 | Stopped — a `.ralph/STOP` file was planted. |
+| 6 | Pass timeout — a pass exceeded `PASS_TIMEOUT` and was killed. |
+
+Knobs (all optional): `STALL_MAX` (2), `PASS_TIMEOUT` (900s), `IDLE_WARN` (300s
+of silence before a heartbeat line naming the pass and card), `PASS_BUDGET_USD`
+(passed to `claude --max-budget-usd`), `RUN_BUDGET_USD` (cumulative; enforced by
+the loop between passes).
 
 ## How a create/build skill emits a board
 

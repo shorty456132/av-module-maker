@@ -103,6 +103,30 @@ The board format and per-pass protocol are specified in
 distinct from the `/ralph-loop` plugin, which keeps a single accumulating
 session rather than fresh context per pass.
 
+### Watching a run
+
+Each run keeps its state in `<module-dir>/.ralph/` (git-ignored), so a build you
+launched in one terminal — or in the background hours ago — can be inspected from
+anywhere without touching the loop:
+
+```
+python scripts/ralph/status.py show ./My-Plugin/   # pass, card, progress, spend
+tail -f ./My-Plugin/.ralph/run.log                 # the live narration
+cat ./My-Plugin/.ralph/REPORT.md                   # written on every exit path
+touch ./My-Plugin/.ralph/STOP                      # stop cleanly — no PID hunt
+```
+
+Each pass narrates itself as it works (one line per tool call, then a token/cost
+line), because `claude -p` runs with `--output-format stream-json` piped through
+`scripts/ralph/render_pass.py`. The raw stream for pass *N* is kept at
+`.ralph/logs/pass-NN.jsonl`, and cumulative tokens and dollars accumulate in
+`.ralph/status.json`.
+
+The loop's exit code says how it ended: `0` done · `1` max passes (or run budget)
+· `2` no `TODO.md` · `3` blocked · `4` not converging · `5` stopped · `6` pass
+timeout. Knobs, all optional: `STALL_MAX` (2), `PASS_TIMEOUT` (900s),
+`IDLE_WARN` (300s), `PASS_BUDGET_USD`, `RUN_BUDGET_USD`.
+
 ## Roadmap
 
 - **Now**: Q-SYS plugin creation, compilation, and revision; Crestron SIMPL+ module
