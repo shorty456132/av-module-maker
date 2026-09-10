@@ -1,8 +1,8 @@
 # Module Maker
 
 A Claude Code plugin for scaffolding, compiling, and revising control-system modules —
-Q-SYS plugins and Crestron SIMPL+ modules today, with Crestron SIMPL#/SIMPL# Pro and
-Extron Global Scripter support planned.
+Q-SYS plugins and Crestron SIMPL+ and SIMPL# modules today, with Crestron SIMPL# Pro
+and Extron Global Scripter support in the works.
 
 Works from any Claude Code session in any project — no need to `cd` into this repo.
 
@@ -36,11 +36,16 @@ Studio) is **not** needed to compile.
   `C:\Program Files (x86)\Crestron\Simpl\SPlusCC.exe`; override with `--compiler=<path>`
   or the `SPLUSCC` environment variable. The SIMPL Windows GUI is not required.
 
-**Crestron SIMPL# / SIMPL# Pro** (WIP)
-- **.NET SDK** (`dotnet` / MSBuild) — builds the `.clz` / `.cpz` (targets `net47`,
-  4-Series). The `Crestron.SimplSharp.SDK.*` NuGet packages restore automatically via
+**Crestron SIMPL#**
+- **.NET SDK** (`dotnet` / MSBuild) — builds the `.clz` (targets `net47`, 4-Series).
+  The `Crestron.SimplSharp.SDK.Library` NuGet package restores automatically via
   `dotnet` — no separate install. **Visual Studio is not required.**
 - **`SPlusCC.exe`** (as above) — SIMPL# also compiles a `.usp` wrapper.
+
+**Crestron SIMPL# Pro** (WIP)
+- **.NET SDK** (`dotnet` / MSBuild) — builds the `.cpz` (targets `net47`, 4-Series and
+  VC-4). The `Crestron.SimplSharp.SDK.*` NuGet packages restore automatically via
+  `dotnet` — no separate install. **Visual Studio is not required.**
 
 ## Layout
 
@@ -78,8 +83,16 @@ material is redistributed.
 - `/module-maker:simplplus-revise <module-path>` — review and revise an existing SIMPL+
   module against the SIMPL+ constraints, then recompile clean.
 
-**Crestron SIMPL# / SIMPL# Pro** (WIP — stubs scaffolded): `simplsharp-create` /
-`simplsharp-revise`, `simplsharp-pro-create` / `simplsharp-pro-revise`.
+**Crestron SIMPL#** (ready):
+- `/module-maker:simplsharp-create <description>` — scaffold a Crestron SIMPL# library
+  (`.clz`) in C# that exposes signals to SIMPL Windows, then generate its SIMPL+ `.usp`
+  wrapper and compile both (`dotnet build` → stage `.clz` → SIMPL+ Cross Compiler).
+- `/module-maker:simplsharp-revise <project-path>` — review and revise an existing SIMPL#
+  library against the SIMPL# constraints, then rebuild.
+
+**Crestron SIMPL# Pro** (WIP — stubs scaffolded): `simplsharp-pro-create` /
+`simplsharp-pro-revise` — scaffold and revise a SIMPL# Pro program (`.cpz`) for 4-Series
+appliances and VC-4.
 
 ## Ralph loop (unattended module builds)
 
@@ -129,10 +142,10 @@ timeout. Knobs, all optional: `STALL_MAX` (2), `PASS_TIMEOUT` (900s),
 
 ## Roadmap
 
-- **Now**: Q-SYS plugin creation, compilation, and revision; Crestron SIMPL+ module
-  creation and revision with compile verification.
-- **In progress**: Crestron SIMPL# and SIMPL# Pro module creation — folder structure
-  and skill stubs are in place; reference docs and implementation to follow.
+- **Now**: Q-SYS plugin creation, compilation, and revision; Crestron SIMPL+ and SIMPL#
+  module creation and revision with compile verification.
+- **In progress**: Crestron SIMPL# Pro (`.cpz`) module creation — folder structure and
+  skill stubs are in place; reference docs and implementation to follow.
 - **Planned**: Extron Global Scripter module creation, following the same
   `skills/<platform>/` + `reference/<platform>/` convention.
 
