@@ -581,6 +581,76 @@ Follow this order to ensure dependencies are satisfied:
 9. **components.lua**, **pins.lua**, **wiring.lua**, **rectify_properties.lua** — Supporting files as needed
 10. **README.md** — Plugin documentation
 
+## Build Mode — decide this BEFORE writing any `.lua` file
+
+After protocol discovery (step 0) and confirming the command set, count the
+file-cards this plugin needs from the Creation Order above (each `.lua`/`.md`
+file it will actually produce). Then choose the mode by size — this is **not
+optional**, and it decides how the whole build runs:
+
+- **More than 5 file-cards → Ralph Loop Mode (the default for a real plugin).**
+  Emit a frozen `TODO.md` board and run the loop, so each file is built in a
+  fresh context and one session never bloats. Steps below.
+- **5 or fewer file-cards → build inline** as the rest of this skill describes —
+  write the files directly in this session. The loop's per-pass overhead isn't
+  worth it for a small plugin.
+
+The user's explicit wish always wins over the count: "use the loop" forces the
+loop even for a tiny plugin; "just build it inline" forces inline even for a big
+one. Absent that, follow the count.
+
+## Ralph Loop Mode (for plugins over 5 file-cards, or when asked)
+
+Do not write every file in one session. Instead **emit a `TODO.md` board** and
+hand off to the raw Ralph loop, which builds one card per fresh-context pass. The
+full contract is `${CLAUDE_PLUGIN_ROOT}/reference/RALPH_TODO.md`; the board engine
+is `${CLAUDE_PLUGIN_ROOT}/scripts/ralph/board.py`.
+
+**To emit the board**, translate the Creation Order above into one card per file,
+in the same dependency order, and write `TODO.md` into the plugin directory
+**before writing any `.lua` files** — its shape is defined in the contract doc.
+Emit the header line `_Plan: frozen_` and the **complete** card list up front: a
+frozen board cannot grow during the loop (`board.py add` is refused), so the loop
+converges instead of an eager pass endlessly appending "improvements". Do all
+discovery now; a cold pass that later finds missing work `block`s rather than adds.
+The card list mirrors the Creation Order:
+
+1. `info.lua` → 2. `properties.lua` → 3. `controls.lua` (Depends: properties.lua)
+→ 4. `pages.lua` → 5. `layout.lua` (Depends: controls.lua) → 6. `runtime.lua`
+(Depends: controls.lua, properties.lua) → 7. `model.lua` → 8. `plugin.lua`
+(Depends: all includes) → 9. `components.lua`/`pins.lua`/`wiring.lua`/
+`rectify_properties.lua` as needed → 10. `README.md` → **final card `compile`**.
+
+The **final card is the verify gate** — its `Verify gate:` header line and the
+card's command are:
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" ./<Plugin-Dir>/
+```
+
+Do protocol discovery (if the plugin talks to a device) and confirm the command
+set with the user **before** emitting the board, so each card's `Spec` is
+self-contained — a loop pass has only `TODO.md` + files on disk as memory and
+must not guess protocol details. Fold the confirmed commands into the
+`controls.lua` / `runtime.lua` card specs.
+
+Then **run the loop yourself — do not just print the command for the user.**
+Invoke it with the Bash tool (on Windows the Bash tool already is Git Bash):
+
+```
+"${CLAUDE_PLUGIN_ROOT}/scripts/ralph/ralph-module-loop.sh" ./<Plugin-Dir>/
+```
+
+Each pass is a fresh `claude -p` (clean context every time); the script prints a
+per-pass banner, the board status, and a remaining-card count that must drop as
+cards reach Done. Let it run to completion, then report the outcome:
+
+- `✓ Module complete in N pass(es)` — done. Summarize what was built and where.
+- `⚠ Not converging` (stall) or `✗ Blocked` — open `<Plugin-Dir>/TODO.md`, read
+  the reason on the 🚫 Blocked card, and surface it. A `needs-new-card:` reason
+  means the frozen plan was missing work: amend the board with the user, then
+  re-run the same loop command to resume.
+
 ## Consistency Checklist
 
 Before finishing, verify:

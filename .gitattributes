@@ -1,0 +1,3 @@
+# Shell scripts must keep LF endings and be executable so they run under bash
+# on every platform (CRLF or a stripped exec bit breaks the shebang).
+*.sh text eol=lf
