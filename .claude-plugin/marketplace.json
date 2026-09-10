@@ -7,7 +7,7 @@
     {
       "name": "module-maker",
       "source": "./",
-      "version": "0.5.1",
+      "version": "0.6.0",
       "description": "Scaffold, compile, and revise Q-SYS plugins, Crestron and Extron modules"
     }
   ]
