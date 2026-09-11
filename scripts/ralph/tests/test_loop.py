@@ -69,8 +69,22 @@ _Plan: frozen_
 # A stub `claude`: emits the stream-json event shapes the renderer parses, then
 # advances exactly one card — the same contract module-loop-prompt.md gives a
 # real pass. `$MODULE_DIR`/`$BOARD_PY` are baked in when the stub is written.
+#
+# It also records, one line per invocation, which session flag the loop handed
+# it (`session-id <uuid>` or `resume <uuid>`), so the rotation tests can prove
+# the loop keeps a session warm and rotates it at the token ceiling. `claude`
+# reports its context size via the `result` event's cache-read count, which the
+# renderer turns into `last_context_tokens` — the value the loop thresholds on.
 STUB = """\
 #!/usr/bin/env bash
+sess=""
+for a in "$@"; do
+  case "$a" in
+    --session-id) sess="session-id" ;;
+    --resume) sess="resume" ;;
+    *) if [ -n "$sess" ]; then printf '%s %s\\n' "$sess" "$a" >> "{argv_log}"; sess="" ; fi ;;
+  esac
+done
 echo '{{"type":"system","subtype":"init","session_id":"stub1234-0000","model":"stub-model"}}'
 title="$(python "{board}" next "{dir}")"
 if [ "$title" != "NONE" ]; then
@@ -97,12 +111,29 @@ def install_stub(tmp_path, module_dir, work=WORK_DONE):
     bin_dir.mkdir()
     board_py = os.path.join(RALPH, "board.py").replace("\\", "/")
     mod = str(module_dir).replace("\\", "/")
-    script = STUB.format(board=board_py, dir=mod,
+    argv_log = (tmp_path / "stub-argv.log").as_posix()
+    script = STUB.format(board=board_py, dir=mod, argv_log=argv_log,
                          work=work.format(board=board_py, dir=mod))
     stub = bin_dir / "claude"
     stub.write_text(script, encoding="utf-8", newline="\n")
     os.chmod(stub, 0o755)
     return bin_dir
+
+
+def session_invocations(tmp_path):
+    """One `("session-id"|"resume", <id>)` per pass, in order — what the loop
+    handed the stub. The rotation tests read this to prove the session is kept
+    warm across passes and rotated when the context ceiling is crossed."""
+    log = tmp_path / "stub-argv.log"
+    if not log.exists():
+        return []
+    out = []
+    for line in log.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            kind, _, sid = line.partition(" ")
+            out.append((kind, sid))
+    return out
 
 
 def _shell_utils_dir():
@@ -194,6 +225,48 @@ def test_status_show_reads_the_finished_run(tmp_path):
         capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert proc.returncode == 0
     assert "exit 0" in proc.stdout
+
+
+# --- session rotation (token-monitored) -----------------------------------
+
+def test_first_pass_creates_a_session_and_later_passes_resume_it(tmp_path):
+    # The whole point of rotation: keep ONE session warm across cards so a small
+    # slice does not pay to rebuild context. Pass 1 must *create* a session
+    # (--session-id, never --resume a session that does not exist yet); under the
+    # token ceiling, every later pass resumes that same id.
+    module_dir = make_module(tmp_path)
+    proc = run_loop(tmp_path, module_dir, install_stub(tmp_path, module_dir),
+                    env_extra={"CONTEXT_ROTATE_TOKENS": "150000"})
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    calls = session_invocations(tmp_path)
+    assert len(calls) == 2, calls                       # two cards, two passes
+    assert calls[0][0] == "session-id"                  # pass 1 creates
+    assert calls[1] == ("resume", calls[0][1])          # pass 2 resumes the same id
+
+
+def test_session_rotates_when_context_exceeds_the_ceiling(tmp_path):
+    # The stub reports ~1010 context tokens per pass (cache-read 900 + in 100 +
+    # cache-creation 10). With the ceiling set below that, every pass is "full",
+    # so the loop must NOT resume — it starts a fresh session each pass, and the
+    # ids differ.
+    module_dir = make_module(tmp_path)
+    proc = run_loop(tmp_path, module_dir, install_stub(tmp_path, module_dir),
+                    env_extra={"CONTEXT_ROTATE_TOKENS": "100"})
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    calls = session_invocations(tmp_path)
+    assert len(calls) == 2, calls
+    assert calls[0][0] == "session-id"
+    assert calls[1][0] == "session-id"                  # rotated, not resumed
+    assert calls[1][1] != calls[0][1]                   # a genuinely new id
+    assert "rotat" in proc.stdout.lower()               # the loop said why
+
+
+def test_last_context_tokens_is_recorded_in_status(tmp_path):
+    # Rotation reads this field from status.json; the renderer must write it.
+    module_dir = make_module(tmp_path)
+    run_loop(tmp_path, module_dir, install_stub(tmp_path, module_dir))
+    data = json.loads((module_dir / ".ralph" / "status.json").read_text(encoding="utf-8"))
+    assert data["last_context_tokens"] == 1010          # set to the last pass, not summed
 
 
 # --- the exit-code contract -----------------------------------------------

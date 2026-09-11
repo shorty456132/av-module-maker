@@ -131,8 +131,22 @@ def test_parse_line_returns_none_on_malformed_json():
 
 def test_usage_from_result_maps_to_the_status_schema():
     u = rp.usage_from_result(RESULT)
+    # `+`-keys accumulate into the run total; `last_context_tokens` is set (no
+    # `+`) because it is the *current* window size, not a sum — it drives session
+    # rotation, so it must reflect this pass alone.
     assert u == {"+cost_usd": 0.1234, "+input_tokens": 1203, "+output_tokens": 8109,
-                 "+cache_read_tokens": 41000, "+cache_creation_tokens": 2500}
+                 "+cache_read_tokens": 41000, "+cache_creation_tokens": 2500,
+                 "last_context_tokens": 1203 + 41000 + 2500}
+
+
+def test_last_context_tokens_is_the_window_size_and_set_not_accumulated():
+    # The rotation signal: input + cache-read + cache-creation ≈ how full the
+    # context window is on this pass. It is written without a `+` so a later pass
+    # overwrites it rather than summing — a running total would never match the
+    # window and would trip rotation far too early.
+    u = rp.usage_from_result(RESULT)
+    assert u["last_context_tokens"] == 44703
+    assert "+last_context_tokens" not in u
 
 
 def test_usage_from_non_result_event_is_none():
@@ -143,6 +157,7 @@ def test_usage_from_result_missing_usage_block_still_reports_cost():
     u = rp.usage_from_result({"type": "result", "total_cost_usd": 0.5})
     assert u["+cost_usd"] == 0.5
     assert u["+input_tokens"] == 0
+    assert u["last_context_tokens"] == 0
 
 
 # --- the stream driver ----------------------------------------------------

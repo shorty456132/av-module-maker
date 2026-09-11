@@ -2,13 +2,18 @@
 #
 # ralph-module-loop.sh — a RAW Ralph loop for A/V module creation.
 #
-# Re-runs `claude -p` with the same prompt every pass. Each pass is a fresh
-# process with a clean context window; the module's TODO.md board plus the files
-# on disk are the ONLY memory (no git). The loop advances exactly one card per
-# pass and stops when the board's `_Status:` line reads `done` or `blocked`.
+# Re-runs `claude -p` every pass, advancing exactly one card, until the board's
+# `_Status:` line reads `done` or `blocked`. The module's TODO.md board plus the
+# files on disk are the durable memory (no git).
 #
-# This is deliberately NOT the /ralph-loop plugin (that keeps one accumulating
-# session via a Stop hook — the opposite of fresh context).
+# Session handling is token-monitored, not fresh-every-pass. The loop keeps one
+# `claude` session warm across cards with `--resume`, so a small slice does not
+# pay to rebuild context it just read, and rotates to a fresh `--session-id`
+# only when the live window crosses CONTEXT_ROTATE_TOKENS (or a pass fails).
+# That bounds context growth — the rot the old fresh-every-pass design avoided —
+# while killing the per-pass re-read cost; the per-card verify gate is the
+# correctness backstop. (This is still NOT the /ralph-loop plugin's unbounded
+# accumulating session.)
 #
 # Usage:
 #   ralph-module-loop.sh <module-dir> [max-passes]
@@ -29,6 +34,10 @@
 #   IDLE_WARN        (300)  seconds of silence before a heartbeat warning
 #   PASS_BUDGET_USD  (—)    per-pass spend cap, handed to `claude --max-budget-usd`
 #   RUN_BUDGET_USD   (—)    cumulative cap; the loop stops between passes
+#   CONTEXT_ROTATE_TOKENS (150000)  live-window ceiling; above it the warm
+#                           session is rotated to a fresh one (~75% of a 200K
+#                           window — lower it to rotate sooner, raise to keep the
+#                           session warm longer)
 #
 # Windows: run through Git Bash explicitly, e.g.
 #   "C:/Program Files/Git/bin/bash.exe" scripts/ralph/ralph-module-loop.sh ./My-Plugin/
@@ -59,12 +68,28 @@ IDLE_WARN="${IDLE_WARN:-300}"
 PASS_BUDGET_USD="${PASS_BUDGET_USD:-}"
 RUN_BUDGET_USD="${RUN_BUDGET_USD:-}"
 
+# Live-context ceiling for the warm session. The renderer writes each pass's
+# window occupancy (input + cache-read + cache-creation) to status.json as
+# `last_context_tokens`; when it reaches this, the loop rotates to a fresh
+# session rather than dragging a near-full window into the next card.
+CONTEXT_ROTATE_TOKENS="${CONTEXT_ROTATE_TOKENS:-150000}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPT="$SCRIPT_DIR/module-loop-prompt.md"
 BOARD="$SCRIPT_DIR/board.py"
 STATUS="$SCRIPT_DIR/status.py"
 RENDER="$SCRIPT_DIR/render_pass.py"
 TODO="$MODULE_DIR/TODO.md"
+
+# The plugin root (…/scripts/ralph → the plugin dir) and its reference/ docs.
+# Both are added to the session and baked into the prompt so a pass can read the
+# reference docs and run board.py without a permission prompt or a scavenger
+# hunt for the path — the single biggest source of wasted per-pass turns.
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REF_DIR="$PLUGIN_ROOT/reference"
+
+# A fresh session id (Python: uuidgen is absent on a stock Windows Git Bash).
+new_sid() { python -c 'import uuid; print(uuid.uuid4())'; }
 
 # `type -P` (not `command -v`, which would return bash's builtin) resolves the
 # real `kill` binary in *this* shell's PATH, and the renderer is told where it
@@ -133,6 +158,20 @@ except Exception:
 PYEOF
 }
 
+# This pass's live-context window size, which the renderer wrote to status.json.
+# The rotation decision reads it; 0 if the file is missing or the pass emitted no
+# result event (a crash), which with the claude_rc check still forces a rotation.
+context_tokens() {
+  python - "$STATUS_JSON" <<'PYEOF' 2>/dev/null || echo 0
+import json, sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as f:
+        print(int(json.load(f).get("last_context_tokens") or 0))
+except Exception:
+    print(0)
+PYEOF
+}
+
 # --- pre-flight -----------------------------------------------------------
 
 if [[ -f "$STOP_FILE" ]]; then
@@ -141,11 +180,20 @@ if [[ -f "$STOP_FILE" ]]; then
   finish 5 "⏹ Stopped before the first pass."
 fi
 
-CLAUDE_ARGS=(--add-dir "$MODULE_DIR" --permission-mode acceptEdits
+CLAUDE_ARGS=(--add-dir "$MODULE_DIR"
+             # The reference docs and board.py live under the plugin root, not
+             # the module dir. Without this the pass is DENIED reading them and
+             # burns turns retrying — a confirmed waste in real runs.
+             --add-dir "$PLUGIN_ROOT"
+             --permission-mode acceptEdits
+             # acceptEdits auto-approves file writes but not Bash, so every
+             # `python board.py …` and the `python …/compile.py` verify gate
+             # would otherwise need an approval no headless run can give.
+             --allowedTools "Bash(python:*)"
              --output-format stream-json --verbose
              # The dynamic sections change between passes and would bust the
              # prompt cache every time; excluding them keeps a stable prefix so
-             # each fresh pass re-reads the same cached preamble.
+             # a resumed (or freshly rotated) pass reuses the cached preamble.
              --exclude-dynamic-system-prompt-sections)
 [[ -n "$PASS_BUDGET_USD" ]] && CLAUDE_ARGS+=(--max-budget-usd "$PASS_BUDGET_USD")
 
@@ -155,6 +203,11 @@ say "   max $MAX passes · stall $STALL_MAX · timeout ${PASS_TIMEOUT}s · stop:
 
 pass=0
 stall=0
+# The warm session carried across cards. `fresh_session=1` means the next pass
+# creates it (`--session-id`); after a pass under the context ceiling it flips to
+# 0 so the following pass resumes it. Rotation mints a new id and sets it back.
+SID="$(new_sid)"
+fresh_session=1
 load_board || exit 2
 prev_remaining="$B_REMAINING"
 
@@ -179,15 +232,31 @@ while (( pass < MAX )); do
   status_write "state=running" "pass=$pass" "max_passes=$MAX" \
                "current_card=$B_CURRENT" "pass_started_at=$(date -Iseconds)"
 
-  # Fresh context every pass. acceptEdits lets the pass write files and run the
-  # verify gate unattended.
-  #
+  # Keep the session warm across cards, or create/rotate it when fresh. The
+  # prompt is told which, so it does not re-read what is already in context (or,
+  # on a fresh pass, lean on context it no longer has). acceptEdits lets the pass
+  # write files and run the verify gate unattended.
+  if (( fresh_session )); then
+    session_args=(--session-id "$SID")
+    mode_line="Fresh session — your working memory is TODO.md plus the files you read this pass."
+  else
+    session_args=(--resume "$SID")
+    mode_line="Continuing an open session — earlier cards this run are already in your context; re-read a file only if it changed on disk since."
+  fi
+  # Resolve the plugin paths into the prompt so a pass never burns turns hunting
+  # for board.py: the ${CLAUDE_PLUGIN_ROOT} the prompt once told it to use is not
+  # visible to the Bash tool, and the literal ${...} trips a permission block.
+  prompt_text="$mode_line"$'\n\n'"$(cat "$PROMPT")"
+  prompt_text="${prompt_text//__BOARD_PY__/$BOARD}"
+  prompt_text="${prompt_text//__REF_DIR__/$REF_DIR}"
+  prompt_text="${prompt_text//__MODULE_DIR__/$MODULE_DIR}"
+
   # The child's PID is parked in a file because the renderer sits downstream in
   # this pipe and cannot see it: that is how a mid-pass STOP kills the pass.
   # `wait $!` makes the group's status `claude`'s own, so PIPESTATUS[0] is the
   # real exit code — the old `|| true` hid a rate-limited or crashed pass until
   # it resurfaced two passes later as a stall.
-  { timeout "$PASS_TIMEOUT" claude -p "$(cat "$PROMPT")" "${CLAUDE_ARGS[@]}" & \
+  { timeout "$PASS_TIMEOUT" claude -p "$prompt_text" "${CLAUDE_ARGS[@]}" "${session_args[@]}" & \
       echo $! > "$PID_FILE"; wait $!; } \
     | tee "$RALPH_DIR/logs/pass-${pass_label}.jsonl" \
     | python "$RENDER" --dir "$MODULE_DIR" --pass "$pass" --card "$B_CURRENT" \
@@ -233,6 +302,19 @@ while (( pass < MAX )); do
   prev_remaining="$B_REMAINING"
   if (( stall >= STALL_MAX )); then
     finish 4 "⚠ Not converging — remaining cards did not drop for $STALL_MAX passes. Inspect $TODO."
+  fi
+
+  # Session rotation: the renderer wrote this pass's live-window size to
+  # status.json. Keep resuming while it is under the ceiling; once it crosses —
+  # or the pass exited non-zero, so its session may be unusable — mint a fresh id
+  # so the next pass starts clean instead of dragging a near-full window forward.
+  ctx="$(context_tokens)"
+  if (( claude_rc != 0 )) || awk "BEGIN{exit !($ctx >= $CONTEXT_ROTATE_TOKENS)}"; then
+    SID="$(new_sid)"
+    fresh_session=1
+    say "   ↻ rotating session — context ${ctx} tok ≥ ceiling ${CONTEXT_ROTATE_TOKENS} (or pass exit ${claude_rc}); next pass starts fresh"
+  else
+    fresh_session=0
   fi
 
   if [[ -n "$RUN_BUDGET_USD" ]]; then

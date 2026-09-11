@@ -172,6 +172,11 @@ def render(data: dict) -> str:
             o=int(data.get("output_tokens", 0) or 0),
             cr=int(data.get("cache_read_tokens", 0) or 0)),
     ]
+    ctx = data.get("last_context_tokens")
+    if ctx:
+        # The live session's window occupancy (not a run total) — the value the
+        # loop rotates the session on. Shown so a watcher sees it climb.
+        lines.append("  context: {c:,} tokens in the live session".format(c=int(ctx)))
     for blocked in board.get("blocked") or []:
         lines.append("  🚫 {t}: {r}".format(t=blocked["title"], r=blocked["reason"]))
     exit_code = data.get("exit_code")
@@ -213,6 +218,8 @@ def render_report(data: dict) -> str:
             o=int(data.get("output_tokens", 0) or 0),
             cr=int(data.get("cache_read_tokens", 0) or 0),
             cw=int(data.get("cache_creation_tokens", 0) or 0))),
+        ("Last context", "{c:,} tokens in the session at the final pass".format(
+            c=int(data.get("last_context_tokens", 0) or 0))),
     ]
     out = [
         "# Ralph run report — {n}".format(

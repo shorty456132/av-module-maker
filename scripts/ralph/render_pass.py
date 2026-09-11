@@ -155,7 +155,15 @@ def render_event(event) -> List[str]:
 
 def usage_from_result(event) -> Optional[dict]:
     """The `result` event's accounting, keyed for `status.write()`'s `+` merge
-    so a pass's numbers accumulate into the run total. None for other events."""
+    so a pass's numbers accumulate into the run total. None for other events.
+
+    `last_context_tokens` is the exception: it is written *without* a `+`, so a
+    later pass overwrites it rather than summing. It is the prompt side of this
+    one pass — input + cache-read + cache-creation ≈ how full the context window
+    is right now — which is exactly what the loop thresholds on to decide whether
+    to keep the session warm (`--resume`) or rotate to a fresh one. A running
+    total would never match the window and would trip rotation far too early.
+    """
     if not isinstance(event, dict) or event.get("type") != "result":
         return None
     usage = event.get("usage")
@@ -177,6 +185,9 @@ def usage_from_result(event) -> Optional[dict]:
         "+output_tokens": num("output_tokens"),
         "+cache_read_tokens": num("cache_read_input_tokens"),
         "+cache_creation_tokens": num("cache_creation_input_tokens"),
+        "last_context_tokens": (num("input_tokens")
+                                + num("cache_read_input_tokens")
+                                + num("cache_creation_input_tokens")),
     }
 
 

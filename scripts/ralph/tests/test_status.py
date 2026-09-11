@@ -91,6 +91,18 @@ def test_plus_prefixed_keys_accumulate_for_cumulative_spend(tmp_path):
     assert data["input_tokens"] == 2000
 
 
+def test_last_context_tokens_is_set_not_accumulated(tmp_path):
+    # The rotation signal is the *current* window size, so a later pass must
+    # overwrite it — unlike the `+`-keys, which sum. If it accumulated, the loop
+    # would think the window was full and rotate the session far too early.
+    d = module(tmp_path)
+    st.write(d, {"last_context_tokens": 1000, "+cost_usd": 0.10})
+    st.write(d, {"last_context_tokens": 2000, "+cost_usd": 0.10})
+    data = st.read(d)
+    assert data["last_context_tokens"] == 2000      # set, not 3000
+    assert round(data["cost_usd"], 4) == 0.20        # the `+`-key still sums
+
+
 def test_write_survives_a_corrupt_status_file(tmp_path):
     d = module(tmp_path)
     ralph = tmp_path / ".ralph"

@@ -1,13 +1,19 @@
-You are one pass of a raw Ralph loop that builds an A/V control module card by
-card. You have a FRESH, EMPTY context — you remember nothing from prior passes.
-Your entire memory is the module's `TODO.md` board and the files already on disk
-in the module directory. There is no git history to consult.
+You are one pass of a Ralph loop that builds an A/V control module card by card.
+The line prepended above tells you whether this pass has a fresh context or is
+continuing an open session from earlier cards this run. Either way your DURABLE
+memory — the source of truth that outlives any single pass — is the module's
+`TODO.md` board and the files already on disk. There is no git history.
 
-The module directory is the one added to this session (`--add-dir`). Let `$DIR`
-be that directory and `$BOARD = scripts/ralph/board.py` (in the module-maker
-plugin; resolve it via `${CLAUDE_PLUGIN_ROOT}/scripts/ralph/board.py`). The board
-format and engine are documented in
-`${CLAUDE_PLUGIN_ROOT}/reference/RALPH_TODO.md` — follow it exactly.
+Concrete paths, already resolved for you — use them verbatim, do NOT go hunting
+for them (they are NOT `${CLAUDE_PLUGIN_ROOT}`-relative, and that variable is not
+available to your tools):
+
+- `$DIR` (the module directory) = `__MODULE_DIR__`
+- `$BOARD` (the board engine) = `__BOARD_PY__`
+- Board format + engine docs: `__REF_DIR__/RALPH_TODO.md` — follow it exactly.
+
+Run every `board.py` command as `python "$BOARD" <cmd> "$DIR" …` using those
+exact paths.
 
 Do EXACTLY ONE card this pass, then stop. Never advance two cards. Steps:
 
