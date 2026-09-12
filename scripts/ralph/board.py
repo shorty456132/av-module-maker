@@ -23,6 +23,8 @@ Board layout (see reference/RALPH_TODO.md for the authored contract):
 
 CLI (used by the loop prompt):
     python board.py next   <dir>                  -> prints title to work, or NONE
+    python board.py show   <dir> <title>          -> prints only that card's raw block
+    python board.py deps   <dir> <title>          -> prints its Depends: filenames, one per line
     python board.py start  <dir> <title>
     python board.py done   <dir> <title>
     python board.py block  <dir> <title> <reason>
@@ -158,6 +160,16 @@ def pick(board: Board) -> Optional[str]:
     for card in board.section("Next Up"):
         if all(dep in done_titles for dep in card.depends):
             return card.title
+    return None
+
+
+def find_card(board: Board, title: str) -> Optional[Card]:
+    """The card with this exact title in any section, or None. Lets a cold pass
+    fetch just its card (via `show`/`deps`) without re-parsing the board itself."""
+    for name in SECTIONS:
+        for card in board.section(name):
+            if card.title == title:
+                return card
     return None
 
 
@@ -346,6 +358,21 @@ def main(argv: List[str]) -> int:
     cmd, rest = argv[0], argv[1:]
     if cmd == "next":
         print(pick(parse(_read(rest[0]))) or "NONE")
+        return 0
+    if cmd == "show":
+        card = find_card(parse(_read(rest[0])), rest[1])
+        if card is None:
+            print(f"card not found: {rest[1]!r}", file=sys.stderr)
+            return 3
+        print(card.raw)
+        return 0
+    if cmd == "deps":
+        card = find_card(parse(_read(rest[0])), rest[1])
+        if card is None:
+            print(f"card not found: {rest[1]!r}", file=sys.stderr)
+            return 3
+        for dep in card.depends:
+            print(dep)
         return 0
     if cmd == "status":
         print(parse(_read(rest[0])).status)

@@ -354,3 +354,68 @@ def test_summary_shell_leaves_current_empty_when_nothing_is_eligible(tmp_path, c
     env = dict(ln.split("=", 1) for ln in capsys.readouterr().out.strip().splitlines())
     assert env["B_CURRENT"] in ("''", '""', "")
     assert env["B_BLOCKED"] == "1"
+
+
+# --- show / deps (S1: per-card reads for a cold pass) ---------------------
+#
+# A cold Ralph pass must be able to fetch *just its card* and *just its
+# dependency filenames*, instead of reading the whole TODO.md + directory.
+# These two commands are the S2 contract: `show` -> one card's raw block,
+# `deps` -> the comma-split Depends: filenames one per line.
+
+TWO_DEPS = """\
+# TODO — Sample Plugin (qsys)
+
+_Last updated: 2026-09-01_
+_Status: in-progress_
+
+## 📋 Next Up
+- [ ] **info.lua** — PluginInfo table with unique random GUID.
+  - Spec: Name/Version/Id/Author/Description.
+  - Verify: Id is a fresh random UUID.
+- [ ] **runtime.lua** — Wire runtime behavior.
+  - Spec: Connect on Setup-page controls; poll status.
+  - Depends: info.lua, controls.lua
+  - Verify: names match controls.lua.
+
+## 🔄 In Progress
+
+## ✅ Done
+
+## 🚫 Blocked
+"""
+
+
+def test_deps_prints_dependency_filenames(tmp_path, capsys):
+    # A card with `Depends: info.lua, controls.lua` prints each filename on its
+    # own line; a card with no Depends: prints nothing.
+    (tmp_path / "TODO.md").write_text(TWO_DEPS, encoding="utf-8")
+
+    assert b.main(["deps", str(tmp_path), "runtime.lua"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["info.lua", "controls.lua"]
+
+    assert b.main(["deps", str(tmp_path), "info.lua"]) == 0
+    assert capsys.readouterr().out.strip() == ""
+
+
+def test_show_prints_only_that_card(tmp_path, capsys):
+    (tmp_path / "TODO.md").write_text(FRESH, encoding="utf-8")
+
+    assert b.main(["show", str(tmp_path), "controls.lua"]) == 0
+    out = capsys.readouterr().out
+    # The requested card's block is present in full...
+    assert "**controls.lua**" in out
+    assert "Setup-page IP/Port/Connect/Status" in out
+    # ...and no *other* card's title/spec leaks in. (info.lua's unique spec text
+    # never appears; its bare name may occur only inside controls.lua's Depends.)
+    assert "PluginInfo table with unique random GUID" not in out
+    assert "fresh random UUID" not in out
+
+
+def test_show_unknown_title_errors(tmp_path, capsys):
+    (tmp_path / "TODO.md").write_text(FRESH, encoding="utf-8")
+    rc = b.main(["show", str(tmp_path), "nope.lua"])
+    assert rc != 0
+    err = capsys.readouterr().err
+    assert "not found" in err
+    assert "nope.lua" in err
