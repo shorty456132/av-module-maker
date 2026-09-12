@@ -362,3 +362,27 @@ def test_simplsharp_revise_board_drains():
     last = b.parse(SIMPLSHARP_REVISE_BOARD).section("Next Up")[-1]
     assert last.title == "re-verify"
     assert "simplsharp_build.py" in last.raw
+
+
+# --- scoped-read safety (S2) ----------------------------------------------
+#
+# S2 stops each cold pass from reading the whole directory: it reads only the
+# files named by the current card's `Depends:` (via `board.py deps`). That is
+# only safe if every `Depends:` entry names a card that actually exists on the
+# board — a dangling dependency would silently drop a file the card needs and
+# the pass would never know to read it. This guards the invariant across every
+# emit-mode fixture, so a future skill edit that mistypes a dep is caught here.
+
+ALL_EMIT_BOARDS = (SIMPLPLUS_BOARD, SIMPLSHARP_BOARD, SIMPLSHARP_REVISE_BOARD)
+
+
+def test_every_depends_names_a_real_card():
+    for text in ALL_EMIT_BOARDS:
+        deps = deps_of(text)
+        titles = set(deps)
+        for title, dep_list in deps.items():
+            for dep in dep_list:
+                assert dep in titles, (
+                    f"{title!r} Depends on {dep!r}, which is not a card title on "
+                    f"the board — a scoped pass would never read that file"
+                )

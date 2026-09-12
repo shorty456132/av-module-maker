@@ -22,9 +22,17 @@ Do EXACTLY ONE card this pass, then stop. Never advance two cards. Steps:
 2. If that title is NOT already in In Progress, run
    `python $BOARD start $DIR "<title>"`.
 
-3. **Read the files that already exist in `$DIR`** and the full `TODO.md`. This
-   is your only memory — stay consistent with names, styles, and decisions
-   already committed to disk. Read the card's `Spec`, `Depends`, and `Verify`.
+3. **Get just this card, and read only what it depends on** — not the whole
+   board and not the whole directory:
+   - `python $BOARD show $DIR "<title>"` → this card's `Spec`, `Depends`, and
+     `Verify`, nothing from other cards.
+   - `python $BOARD deps $DIR "<title>"` → the dependency filenames, one per
+     line. **Read only those files** (plus the card's own target file if a prior
+     pass partly wrote it). This is the memory git would give — it keeps your
+     names, styles, and decisions consistent with the files this card builds on.
+   - Do **not** read the rest of `$DIR` or the full `TODO.md`. A complete
+     `Depends:` is what makes that safe; if a fact you truly need is missing,
+     `block` with `needs-new-card:` (step 6) rather than reading everything.
 
 4. Do that one card's work:
    - If the card is a file, write/complete that file per its Spec and the

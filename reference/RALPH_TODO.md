@@ -19,7 +19,8 @@ model.
 2. **The files already written** in the module directory.
 
 So every card must carry enough spec to be executed cold, and every pass must
-**read the existing module files before writing** to stay consistent. This is
+**read the files its card `Depends:` on before writing** — only those, not the
+whole directory — to stay consistent while keeping a cold pass cheap. This is
 *not* the `/ralph-loop` plugin — that one keeps a single accumulating session
 via a Stop hook, which is the opposite of fresh context.
 
@@ -83,6 +84,8 @@ Never hand-edit the section moves; call the engine so transitions are exact.
 | Command | Effect |
 |---|---|
 | `python board.py next <dir>` | Prints the title to work (resume In Progress, else top eligible Next Up), or `NONE`. |
+| `python board.py show <dir> <title>` | Prints only that card's raw block (Spec / Depends / Verify) — nothing from other cards. Lets a cold pass read just its card. |
+| `python board.py deps <dir> <title>` | Prints the card's `Depends:` filenames, one per line (empty when it has none) — the exact set of files a scoped pass reads. |
 | `python board.py start <dir> <title>` | Move Next Up → In Progress; stamp date; `_Status: in-progress_`. |
 | `python board.py done <dir> <title>` | Move In Progress → Done, mark `[x]`; recompute status (`done` iff drained). |
 | `python board.py block <dir> <title> <reason>` | Move → Blocked with reason; `_Status: blocked_`. |
@@ -100,7 +103,11 @@ Each `claude -p` pass runs `scripts/ralph/module-loop-prompt.md`, which does:
 
 1. `board.py next <dir>` → the card to work (`NONE` ⇒ verify + finish).
 2. `board.py start <dir> <title>` (skip if already In Progress — resume it).
-3. **Read the existing files in `<dir>`** — this is the memory git would give.
+3. `board.py show <dir> <title>` for this card, then `board.py deps <dir> <title>`
+   and **read only those dependency files** (plus the card's own file if a prior
+   pass partly wrote it) — the scoped memory git would give. Do **not** read the
+   rest of `<dir>` or the whole board; a complete `Depends:` is what makes that
+   safe.
 4. Do exactly that **one** card, then check its `Verify`. Run the verify-gate
    command only when the card *is* the gate.
 5. Success → `board.py done <dir> <title>`.
