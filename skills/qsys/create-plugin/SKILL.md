@@ -621,6 +621,44 @@ The card list mirrors the Creation Order:
 (Depends: all includes) → 9. `components.lua`/`pins.lua`/`wiring.lua`/
 `rectify_properties.lua` as needed → 10. `README.md` → **final card `compile`**.
 
+Set a **complete `Depends:`** on every cross-file card — the exact set of files
+that card must stay consistent with (`layout.lua` Depends `controls.lua`;
+`runtime.lua` Depends `controls.lua, properties.lua`; `plugin.lua` Depends every
+include). A loop pass reads **only** its `Depends:` files (see the per-pass
+protocol in `RALPH_TODO.md`), so a missing dependency silently starves the pass
+of a file it needs; an accurate `Depends:` is what keeps cross-file names
+character-identical without re-reading the whole directory.
+
+### Emit self-contained specs (so a pass never opens the big refs)
+
+You have already read `QSYS_PATTERNS.md`, `QSYS_CONSTRAINTS.md`, and (via
+subagents) any doc pages needed to plan this board. **Distill that knowledge into
+each card's `Spec` now** — it is free here and saves every cold pass from
+re-opening those large files (a pass that must read a 500-line reference each
+time is exactly the cost this loop mode exists to avoid). Each `Spec` must carry
+everything the card needs to build its file cold:
+
+- The canonical **Name** and the **Author** answer (written literally, e.g.
+  `Unspecified`) wherever a card writes them.
+- The **exact control-name list** the card must produce or reference —
+  character-identical across `controls.lua` / `layout.lua` / `runtime.lua` — plus
+  each control's type/pin settings.
+- The **house-rule nuggets** that apply to that file, inlined as concrete
+  instructions, not pointers: connection details are Setup-page Text controls
+  (never properties); no `Count > 1` (property-driven loops with identical
+  names); `TCP.ReadTimeout`/`WriteTimeout` default `0`; funnel TX/RX through one
+  logged `Send`/`ParseResponse` pair; the layout visual rules (build version
+  shown, dark GroupBox, a label per control, contrast, meaningful button colors,
+  `UnlinkOffColor` on toggles).
+- The **confirmed protocol** command/response strings folded into the
+  `controls.lua` / `runtime.lua` specs.
+
+A well-emitted card `Spec` **must not** say "see `QSYS_PATTERNS.md`" (or any
+reference doc) for a value the pass needs to write — fold the value in instead. A
+cold pass is told not to open those docs; if a `Spec` is missing a fact, the pass
+`block`s with `needs-new-card:` and you amend the board, rather than the pass
+reading the whole reference set.
+
 The **final card is the verify gate** — its `Verify gate:` header line and the
 card's command are:
 

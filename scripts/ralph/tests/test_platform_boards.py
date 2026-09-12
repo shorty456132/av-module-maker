@@ -364,6 +364,163 @@ def test_simplsharp_revise_board_drains():
     assert "simplsharp_build.py" in last.raw
 
 
+# --- Q-SYS representative board (self-contained specs) --------------------
+#
+# Mirrors the board qsys create-plugin emits in Ralph Loop Mode after S3: each
+# card's Spec folds the house-rule nuggets, the canonical Name/author, and the
+# exact control-name list it needs, so a cold pass never opens the big Q-SYS
+# reference docs (QSYS_PATTERNS.md / QSYS_CONSTRAINTS.md / QSYS_DOC_INDEX.md) or
+# WebFetches. Cross-file cards carry a complete Depends so scoped reads (S2)
+# still see every file they build on. This is a TCP device plugin (the common
+# case that pulls in the most reference material).
+
+QSYS_BOARD = """\
+# TODO — Epson Projector (qsys)
+
+_Last updated: 2026-09-01_
+_Status: in-progress_
+_Plan: frozen_
+_Loop: ralph (raw bash, fresh context per pass) · Memory: this file + files on disk_
+
+**Module dir:** ./Epson-Projector/
+**Emitting skill:** module-maker:create-plugin
+**Verify gate:** python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" ./Epson-Projector/
+**Done when:** Next Up and In Progress are empty AND the verify gate passes.
+
+## 📋 Next Up
+- [ ] **info.lua** — PluginInfo metadata table.
+  - Spec: PluginInfo = { Name = "Epson Projector", Version = "1.0.0",
+    BuildVersion = "1.0.0.0", Id = <a freshly generated random UUID
+    xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, every digit random, never reused>,
+    Author = "Unspecified", Description = "TCP control of an Epson projector" }.
+  - Verify: Id is a fresh random UUID; Name/Version/BuildVersion/Author present.
+- [ ] **properties.lua** — Design-time properties only.
+  - Spec: Insert into props only genuinely design-time values. Here: an integer
+    "Poll Interval" (Value 5) and a boolean "Debug Print" (Value false). Do NOT
+    put IP/port here — connection details are Setup-page Text controls, not
+    properties.
+  - Verify: only design-time values; no IP/port/credentials in props.
+- [ ] **controls.lua** — All controls (Setup + Control pages).
+  - Spec: Insert into ctrls. Connection details are runtime Text controls on a
+    Setup page, never properties. Define exactly these names (character-identical
+    across controls.lua / layout.lua / runtime.lua): "IPAddress" (Text),
+    "Port" (Text), "Connect" (Button, ButtonType Toggle), "Status" (Indicator,
+    IndicatorType Status), "Power" (Button, ButtonType Toggle), "Mute" (Button,
+    ButtonType Toggle), "InputHDMI1" (Button, ButtonType Trigger). All UserPin =
+    true. Never use Count > 1 (single controls here — no arrays).
+  - Depends: properties.lua
+  - Verify: names match layout.lua & runtime.lua exactly; no Count > 1.
+- [ ] **pages.lua** — Build the pages table.
+  - Spec: for ix,name in ipairs(PageNames) do table.insert(pages, {name =
+    PageNames[ix]}) end. PageNames is { "Control", "Setup" }.
+  - Verify: one page entry per PageNames item.
+- [ ] **layout.lua** — Visual layout for both pages.
+  - Spec: key `layout` by control name; switch on
+    PageNames[props["page_index"].Value]. Hold the house visual rules: show the
+    build version somewhere; a dark GroupBox background Fill { 35, 35, 35 } behind
+    each page; one Label per control; readable text contrast; meaningful button
+    colors (Connect green-on { 0, 180, 80 } / dark-off { 80, 80, 80 }); set
+    UnlinkOffColor = true on every toggle and the Status LED. Lay out IPAddress,
+    Port, Connect, Status on the Setup page; Power, Mute, InputHDMI1 on the
+    Control page. Every control from controls.lua gets exactly one layout entry.
+  - Depends: controls.lua
+  - Verify: each controls.lua name has one layout entry; visual rules satisfied.
+- [ ] **runtime.lua** — Runtime logic and device I/O.
+  - Spec: Set TCP.ReadTimeout = 0 and TCP.WriteTimeout = 0 (disabled — non-zero
+    only for a TCP server). Read the target from Controls["IPAddress"].String and
+    tonumber(Controls["Port"].String) or 23 — never from a property. Funnel every
+    command through one Send(cmd) that print("TX: "..cmd) then TCP:Write, and one
+    ParseResponse(data) that print("RX: "..data); log socket Error/Connected/
+    Reconnect state changes. Confirmed protocol (TCP, port 23, delimiter \\r):
+    Power On "PWR ON", Power Off "PWR OFF", Mute toggle "MUTE ON"/"MUTE OFF",
+    HDMI1 "SOURCE 30", status poll "PWR?". Wire Connect to connect/disconnect;
+    Power/Mute/InputHDMI1 handlers send the commands above; poll "PWR?" every
+    Properties["Poll Interval"].Value seconds via a Timer. Control names must
+    match controls.lua exactly.
+  - Depends: controls.lua, properties.lua
+  - Verify: every Controls["..."] used exists in controls.lua; both timeouts 0.
+- [ ] **model.lua** — Model variants.
+  - Spec: if props.Model ~= nil and props.Model.Value ~= "" then insert
+    { props.Model.Value } else insert { "Base Model" } end.
+  - Verify: always yields at least one model row.
+- [ ] **plugin.lua** — Orchestrator entry point.
+  - Spec: Header lines "-- Epson Projector", "-- by Unspecified", "-- <date>".
+    PageNames = { "Control", "Setup" }. Define GetColor/GetPrettyName/GetPages/
+    GetModel/GetProperties/GetPins/RectifyProperties/GetComponents/GetWiring/
+    GetControls/GetControlLayout, each delegating via --[[ #include "<file>.lua"
+    ]]; the trailing `if Controls then --[[ #include "runtime.lua" ]] end` block
+    loads runtime on the Core. GetPrettyName shows PluginInfo.Version.
+  - Depends: info.lua, properties.lua, controls.lua, pages.lua, layout.lua, runtime.lua, model.lua
+  - Verify: includes every emitted file; PageNames matches layout's pages.
+- [ ] **README.md** — Plugin documentation.
+  - Spec: Document name/description, the two properties, every control, Setup-page
+    configuration (IP/port), protocol notes (TCP port 23, \\r-delimited), and the
+    Control/Setup pages.
+  - Depends: controls.lua, properties.lua
+  - Verify: lists every property and control; Setup + protocol notes present.
+- [ ] **compile** — Run the verify gate.
+  - Spec: Compile the plugin; fix any diagnostics and recompile until clean.
+  - Depends: plugin.lua
+  - Verify: python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" ./Epson-Projector/  -> exit 0
+
+## 🔄 In Progress
+
+## ✅ Done
+
+## 🚫 Blocked
+"""
+
+
+def test_qsys_board_drains_in_dependency_order():
+    """The emitted Q-SYS board drives start-to-finish, one card per pass in
+    dependency order, to a drained `done` board ending on the compile gate."""
+    order, final = drive(QSYS_BOARD)
+    assert order[0] == "info.lua"
+    assert order[-1] == "compile"
+    deps = deps_of(QSYS_BOARD)
+    seen = set()
+    for title in order:
+        for dep in deps[title]:
+            assert dep in seen, f"{title!r} worked before its dep {dep!r}"
+        seen.add(title)
+    assert b.parse(final).status == "done"
+    last = b.parse(QSYS_BOARD).section("Next Up")[-1]
+    assert last.title == "compile"
+    assert "compile.py" in last.raw
+
+
+def test_qsys_cards_are_self_contained():
+    """S3: no card's Spec defers to a big Q-SYS reference doc or a live fetch for
+    a value it must write — a cold pass builds from the Spec alone — and every
+    cross-file card carries a complete Depends so scoped reads still see every
+    file it builds on."""
+    board = b.parse(QSYS_BOARD)
+    specs = {c.title: c.raw for name in b.SECTIONS for c in board.section(name)}
+
+    # No spec may send a pass into the big reference set or the live docs.
+    banned = [
+        "qsys_patterns.md", "qsys_constraints.md", "qsys_doc_index.md",
+        "webfetch", "help.qsys.com",
+    ]
+    for title, raw in specs.items():
+        low = raw.lower()
+        for needle in banned:
+            assert needle not in low, (
+                f"{title!r} spec defers to {needle!r}; S3 specs must be "
+                f"self-contained so a pass never opens the big refs"
+            )
+
+    # Every cross-file card names a complete Depends set (the files it reads).
+    deps = deps_of(QSYS_BOARD)
+    assert "controls.lua" in deps["layout.lua"]
+    assert {"controls.lua", "properties.lua"} <= set(deps["runtime.lua"])
+    assert {
+        "info.lua", "properties.lua", "controls.lua", "pages.lua",
+        "layout.lua", "runtime.lua", "model.lua",
+    } <= set(deps["plugin.lua"]), "plugin.lua must depend on every include"
+    assert "plugin.lua" in deps["compile"]
+
+
 # --- scoped-read safety (S2) ----------------------------------------------
 #
 # S2 stops each cold pass from reading the whole directory: it reads only the
@@ -373,7 +530,7 @@ def test_simplsharp_revise_board_drains():
 # the pass would never know to read it. This guards the invariant across every
 # emit-mode fixture, so a future skill edit that mistypes a dep is caught here.
 
-ALL_EMIT_BOARDS = (SIMPLPLUS_BOARD, SIMPLSHARP_BOARD, SIMPLSHARP_REVISE_BOARD)
+ALL_EMIT_BOARDS = (QSYS_BOARD, SIMPLPLUS_BOARD, SIMPLSHARP_BOARD, SIMPLSHARP_REVISE_BOARD)
 
 
 def test_every_depends_names_a_real_card():

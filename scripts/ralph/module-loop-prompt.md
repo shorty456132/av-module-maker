@@ -35,8 +35,13 @@ Do EXACTLY ONE card this pass, then stop. Never advance two cards. Steps:
      `block` with `needs-new-card:` (step 6) rather than reading everything.
 
 4. Do that one card's work:
-   - If the card is a file, write/complete that file per its Spec and the
-     emitting skill's conventions (read the skill's reference docs as needed).
+   - If the card is a file, write/complete that file per its `Spec`. Everything
+     you need is in the `Spec` — a well-emitted board folds the house-rules,
+     names, and protocol facts in. **Do not open the large platform reference
+     docs or WebFetch during a pass** (they are big and re-reading them each pass
+     is exactly the cost this loop avoids). If a fact you genuinely need is
+     missing from the `Spec`, `block` the card with `needs-new-card: <what's
+     missing>` (step 6) rather than reading the whole reference set.
    - If the card IS the verify gate, run its command (the `Verify gate:` line in
      the board header) and read the result.
 
