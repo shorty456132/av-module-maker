@@ -94,6 +94,11 @@ material is redistributed.
 `simplsharp-pro-revise` — scaffold and revise a SIMPL# Pro program (`.cpz`) for 4-Series
 appliances and VC-4.
 
+**Build board:** every create and revise skill keeps a `TASKS.md` kanban in the module
+directory while it works and deletes it after a clean build. If one is left behind, the
+build was stopped partway — run the skill again, or say "resume from TASKS.md", and it picks
+up at the next card. See [`reference/BUILD_TASKS.md`](reference/BUILD_TASKS.md).
+
 ## Roadmap
 
 - **Now**: Q-SYS plugin creation, compilation, and revision; Crestron SIMPL+ and SIMPL#
