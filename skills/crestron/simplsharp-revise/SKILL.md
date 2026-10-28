@@ -14,6 +14,11 @@ revision changes the class's public surface, the wrapper must be re-synced to ma
 orchestrator, exit 0.
 
 ## Before revising
+- **Build board.** Track the work in a `TASKS.md` kanban in the top-level `<Name>/`
+  directory per `${CLAUDE_PLUGIN_ROOT}/reference/BUILD_TASKS.md` — resume from it if one
+  already exists; otherwise, after the Step 1 baseline, one card per fix, a wrapper-sync
+  card if the public surface changes, then a final Step 4 card. `simplplus-revise` works
+  under the wrapper-sync card rather than starting its own board.
 - **Do not touch authorship.** Leave any existing `<Authors>`/`<Company>`/namespace value
   exactly as written, and never add one — no name inferred from `git config` or session
   identity. See `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
@@ -119,6 +124,6 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplsharp_build.py" \
 
 - A revision isn't done until this exits **0** (or emits the documented toolchain-missing
   fallback from Step 1 — same graceful handling; don't report broken when the toolchain is
-  simply absent).
+  simply absent). On exit 0, delete `TASKS.md`.
 - Summarize **every change made** — both halves: the C# fixes and any wrapper re-sync (or
   note explicitly that the public surface was unchanged, so the wrapper needed no edit).

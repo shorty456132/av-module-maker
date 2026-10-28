@@ -7,6 +7,11 @@ argument-hint: module file or directory path
 # Revise Crestron SIMPL+ Module
 
 ## Before revising
+- **Build board.** Track the work in a `TASKS.md` kanban in the module directory per
+  `${CLAUDE_PLUGIN_ROOT}/reference/BUILD_TASKS.md` — resume from it if one already
+  exists; otherwise, after the baseline compile, one card per fix, then a final
+  `compile` card. When invoked by `simplsharp-revise` for a wrapper re-sync, use that
+  skill's board instead.
 - **Do not touch authorship.** Leave any existing byline exactly as written, and never add
   one — no `Programmer:` header, no name inferred from `git config` or session identity.
   See `${CLAUDE_PLUGIN_ROOT}/reference/AUTHOR_POLICY.md`.
@@ -47,6 +52,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplplus_build.py" <path/to/modu
 - **On `[FAILED]`:** read each `file: ERROR <code> (Line <n>) - <message>`, fix,
   and recompile until clean. Compare against the pre-edit baseline so you know
   which errors your change introduced versus which were already present.
+- **On `[OK]` (exit 0):** delete `TASKS.md`.
 - **If the script prints `SIMPL+ compiler not found`:** the Crestron toolchain
   isn't installed here — tell the user to install it (Crestron Master Installer)
   or point `--compiler=<path>` / the `SPLUSCC` env var at `SPlusCC.exe`, and give

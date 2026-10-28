@@ -23,6 +23,10 @@ the class instead of being re-designed from prose.
   `.clz` → compile the wrapper. See `${CLAUDE_PLUGIN_ROOT}/reference/crestron/SIMPLSHARP_COMPILATION.md`.
 
 ## Before writing code
+- **Build board.** Track the work in a `TASKS.md` kanban in the top-level `<Name>/`
+  directory per `${CLAUDE_PLUGIN_ROOT}/reference/BUILD_TASKS.md` — resume from it if one
+  already exists; otherwise one card per Step 1–5 below. The wrapper (Step 4) is one
+  card on this board; `simplplus-create` does not start its own.
 - **No author metadata.** Do not add `<Authors>`, `<Company>`, or `<Copyright>` to the
   `.csproj`, do not put a name in a file-header comment, and keep the `MyCompany.*`
   namespace placeholder unless the user supplies a real one. Never infer any of these
@@ -202,7 +206,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplsharp_build.py" \
 The module is **not done until this exits 0.** Read the step lines it prints:
 
 - **`[OK] SIMPL# build` (exit 0):** done — report the `.clz` path and the staged copy
-  beside the wrapper. Phase complete.
+  beside the wrapper, then delete `TASKS.md`. Phase complete.
 - **`[FAIL] simplplus … ERROR <code> (Line <n>) …`:** a wrapper/boundary error. Common
   cause — a **method or signal name that collides with a SIMPL+ reserved word**
   (e.g. naming a method `Command` yields `ERROR 1000 'COMMAND' already defined` in the
