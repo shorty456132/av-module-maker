@@ -16,6 +16,11 @@ REFERENCE = os.path.join(REPO_ROOT, "reference", "BUILD_TASKS.md")
 
 SKILLS = [
     "skills/qsys/create-plugin/SKILL.md",
+    "skills/qsys/plugin-revision/SKILL.md",
+    "skills/crestron/simplplus-create/SKILL.md",
+    "skills/crestron/simplplus-revise/SKILL.md",
+    "skills/crestron/simplsharp-create/SKILL.md",
+    "skills/crestron/simplsharp-revise/SKILL.md",
 ]
 
 

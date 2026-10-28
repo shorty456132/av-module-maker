@@ -25,6 +25,10 @@ scripts. `TASKS.md` is git-ignored.
 - **Delete it after a clean build.** Delete `TASKS.md` only once the final
   compile/build card exits clean. If the build is blocked or stopped, leave the
   file and add a one-line note to the stuck card saying why.
+- **One board per build.** When a skill is invoked as a step of another skill
+  (e.g. `simplsharp-create` → `simplplus-create` for the wrapper), it works under
+  the caller's card on the caller's board — it does not create, resume or delete
+  a board of its own.
 
 ## Template
 
