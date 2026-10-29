@@ -565,6 +565,15 @@ Create a README.md in the plugin directory that documents:
 
 Keep the README concise and practical — focused on what a user needs to get the plugin working.
 
+## Build Board (`TASKS.md`)
+
+Track the build in a `TASKS.md` kanban in the plugin directory, following
+`${CLAUDE_PLUGIN_ROOT}/reference/BUILD_TASKS.md`. If `TASKS.md` already exists,
+resume from it instead of starting over. Otherwise write it after protocol
+discovery and command confirmation, before the first `.lua` file: one card per
+file in the Creation Order below, then a final `compile` card. Move each card to
+Done as soon as its file is written.
+
 ## Creation Order
 
 Follow this order to ensure dependencies are satisfied:
@@ -608,3 +617,5 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" <plugin-directory>
 ```
 
 This resolves all `--[[ #include ]]` directives and outputs a `.qplug` file in the plugin directory. Offer to run this for the user after creating all files.
+
+Once it compiles clean, move the `compile` card to Done and delete `TASKS.md`.

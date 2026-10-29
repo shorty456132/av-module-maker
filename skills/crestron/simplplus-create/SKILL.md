@@ -14,6 +14,10 @@ argument-hint: module description
   with the Crestron SIMPL+ toolchain installed — see **Compile & verify** below.
 
 ## Before writing code
+- **Build board.** Track the work in a `TASKS.md` kanban in the module directory per
+  `${CLAUDE_PLUGIN_ROOT}/reference/BUILD_TASKS.md` — resume from it if one already
+  exists; otherwise cards for the `.usp` sections, then a final `compile` card. When
+  invoked by `simplsharp-create` for a wrapper, use that skill's board instead.
 - **No author byline.** A `.usp` has no author field and none is to be added — do not
   write a `Programmer:` / `Written by:` header comment, and never put a name inferred
   from `git config` or session identity anywhere in the module. Add a byline only if the
@@ -55,7 +59,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/crestron/simplplus_build.py" <path/to/modu
   the project targets a specific processor: `series2`, `series3`, `series4`
   (comma-separated for multiple, e.g. `--target=series4`).
 - **On `[OK]` (exit 0):** report the generated `.ush` header and `SPlsWork/`
-  artifacts (listed by the script) to the user.
+  artifacts (listed by the script) to the user, then delete `TASKS.md`.
 - **On `[FAILED]` (non-zero exit):** read each diagnostic line
   (`file: ERROR <code> (Line <n>) - <message>`), fix the `.usp` accordingly, and
   recompile. Repeat until the compile is clean.

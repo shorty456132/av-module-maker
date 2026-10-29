@@ -20,6 +20,9 @@ For anything they don't cover, **do not read the doc index or WebFetch help page
 
 ## Step 1: Read the Plugin
 
+If the plugin directory already has a `TASKS.md`, a revision is in progress: resume from
+it per `${CLAUDE_PLUGIN_ROOT}/reference/BUILD_TASKS.md` instead of starting over.
+
 Read **all** `.lua` files in the target directory to understand the full plugin:
 
 - `info.lua` — metadata and current version
@@ -95,6 +98,10 @@ Check for these common issues:
 
 ## Step 3: Make Changes
 
+Before the first edit, write a `TASKS.md` build board in the plugin directory (see
+`${CLAUDE_PLUGIN_ROOT}/reference/BUILD_TASKS.md`): one card per agreed change, then a
+final "Version bump & compile" card. Move each card to Done as soon as its change is made.
+
 Edit **only** the files that need changes. Do not rewrite files that are already correct. Use the Edit tool for targeted modifications.
 
 After making changes, run through the consistency checklist to verify nothing is broken:
@@ -128,4 +135,4 @@ If the user chooses Skip:
 python "${CLAUDE_PLUGIN_ROOT}/scripts/qsys/compile.py" $ARGUMENTS
 ```
 
-Tell the user the new version and where the `.qplug` file was created.
+Once it compiles clean, delete `TASKS.md`. Tell the user the new version and where the `.qplug` file was created.
